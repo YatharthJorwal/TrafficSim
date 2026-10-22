@@ -1,8 +1,8 @@
 import type { SignalStates } from './types';
 
 /**
- * TEMPORARY stand-in for the control layer (replaced by src/control in milestone 2).
- * A plain two-phase cycle used by tests, the headless script and the debug view.
+ * Engine-level TEST FIXTURE only (not a controller). Real signals come from src/control.
+ * A plain two-phase cycle for exercising the engine in isolation, plus fixed all-red / all-green states.
  */
 export function simpleCycle(t: number, green = 25, yellow = 3, allRed = 2): SignalStates {
   const phase = green + yellow + allRed;

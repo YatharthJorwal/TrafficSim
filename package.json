@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "sim:headless": "tsx scripts/headless.ts"
+    "sim:headless": "tsx scripts/headless.ts",
+    "apply": "node tools/apply-bundle.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",
@@ -21,6 +22,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "fflate": "^0.8.3",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.5",
