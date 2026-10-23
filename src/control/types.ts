@@ -47,22 +47,8 @@ export interface SignalEvent {
   next?: PhaseId;
 }
 
-/**
- * Detector-derived inputs for adaptive controllers (produced by the detector layer in milestone 3).
- * Observed values are counted from simulated sensors; estimated values are derived and may be wrong.
- */
-export interface ApproachMeasurement {
-  observed: {
-    approaching: number;
-    queueLength: number;
-    avgWait: number;
-    maxWait: number;
-    arrivals: number;
-    departures: number;
-  };
-  estimated: { demandVehPerHour: number };
-}
-export type Measurements = Record<Approach, ApproachMeasurement>;
+export type { ApproachMeasurement, Measurements } from '../detectors/types';
+import type { Measurements } from '../detectors/types';
 
 export interface PhaseRequest {
   phase: PhaseId;

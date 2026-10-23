@@ -2,15 +2,17 @@
 
 ## Layers and allowed imports
 ```
- ui  ->  render  ->  runtime  ->  control  ->  sim
-                        |                       ^
-                        +-----------------------+
- analytics (M5) reads runtime/sim output only
+ ui  ->  render  ->  runtime  ->  control  ->  detectors  ->  sim
+                        |                                 ^
+                        +---------------------------------+
+ analytics (M5) reads runtime / detectors / sim output only
 ```
 - `src/sim`      pure TS traffic engine. Imports nothing from other layers.
-- `src/control`  signal phases, state machine, controllers. Imports `sim` types only. Does not import the engine.
-- `src/runtime`  `SimulationRunner`: the only place engine, machine and controller meet.
-- `src/analytics` (M5) metrics, experiment runner, export.  `src/render` (M3) R3F scene.  `src/ui` dashboard.
+- `src/detectors` virtual detector zones. Reads `VehicleObservation`s; never touches the engine. Defines `Measurements`.
+- `src/control`  signal phases, state machine, controllers. Imports `sim` and `detectors` types only. Does not import the engine.
+- `src/runtime`  `SimulationRunner` (the only place engine, detectors, machine and controller meet), `FixedStepLoop`, `interpolateVehicles`.
+- `src/render`   R3F scene (reads the loop; never writes simulation state).  `src/ui` toolbar and live panel.
+- `src/analytics` (M5) metrics, experiment runner, export.
 - Nothing below `ui` may import React or Three.js.
 
 ## Simulation engine (`src/sim`)
@@ -34,16 +36,29 @@
 - Approach-level signals in v1: N/S share a phase, E/W share a phase (see DECISIONS D4).
 
 ## Runtime tick order (`SimulationRunner.tick`)
-1. controller decides from `machine.status` (+ measurements) and calls `machine.request`
+1. controller decides from `machine.status` and `detectors.measurements`, and calls `machine.request`
 2. engine receives `machine.colors` (valid for [t, t+dt))
 3. `engine.step()`
-4. `machine.step(dt)` (may start a transition)
+4. `detectors.update(time, dt, engine.observe())`
+5. `machine.step(dt)` (may start a transition)
 `setDebugOverride` bypasses 1 and 4 for inspection only and is flagged in snapshots.
 
+## Detectors (`src/detectors`)
+- One zone per approach: from the stop line back `zoneLength` (default 80 m). Sampled once per step.
+- Observed (counted): `inZone`, `approaching`, `queueLength` (stopped chain from the stop line), `queueLengthM`,
+  `zoneOverflow`, `avgWait` / `maxWait` (time stopped inside the zone), `arrivals` / `departures` in a sliding window.
+- Estimated (derived): `demandVehPerHour` = window arrivals scaled to veh/h; 0 until 10 s of data.
+- Events: `arrival` when a vehicle enters the zone, `departure` when its front crosses the stop line. Totals and peaks are kept for metrics.
+- Detectors see only presence and speed, never routes or intentions, and never change the simulation (tested).
+
+## Rendering and the loop
+- `FixedStepLoop.advance(realSeconds)` converts frame time into whole fixed steps (accumulator, clamped), keeps the last two
+  vehicle states, and exposes `alpha`. `SimDriver` calls it from R3F's frame loop at priority -1.
+- Components read `loop.prev/curr/alpha`, `engine.signals` and `detectors.measurements` inside `useFrame` and mutate
+  three.js objects directly. React state is only used by `Hud`, which polls 4x per second in its own component, so the scene
+  never re-renders because of the HUD, and rendering never triggers engine work.
+- Sim (x east, y north) maps to three.js `(x, up, -y)`. Vehicles are two instanced meshes; signal heads and stop lines glow in the engine's signal colour.
+
 ## Planned
-- Detectors (M3): zones per approach computing *observed* values (approaching, queue, waits, arrivals, departures) and
-  *estimated* values (windowed demand) into `Measurements`, passed to the controller via `RunnerOptions.measurements`.
-- Experiments (M5): paired runs sharing one schedule, metrics from `completed` + stats + detector series, CSV/JSON export.
-- Rendering (M3): R3F scene reads `runner.snapshot()` each frame and interpolates between fixed steps; the simulation
-  runs outside React state (ref or Web Worker) so renders never trigger engine work.
+- Experiments (M5): paired runs sharing one schedule, metrics from `completed` + stats + detector totals, CSV/JSON export.
 - AI (M8): adapter outside the tick; recommendation -> validate against machine rules -> apply as a normal request, with timeout and fallback.

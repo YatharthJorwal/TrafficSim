@@ -12,6 +12,7 @@ import {
   type SignalStates,
   type SimConfig,
   type SimSnapshot,
+  type VehicleObservation,
   type VehicleParams,
   type VehicleRecord,
 } from './types';
@@ -182,6 +183,20 @@ export class SimulationEngine {
     this.integrate(dt, t + dt);
     if (this.diagnostics) this.checkOverlaps(t + dt);
     this.stepCount++;
+  }
+
+  /** Read-only per-vehicle view (no poses). Used by detectors and by the renderer's interpolation. */
+  observe(): VehicleObservation[] {
+    return this.vehicles.map((v) => ({
+      id: v.id,
+      routeIndex: v.route.index,
+      approach: v.approach,
+      movement: v.movement,
+      s: v.s,
+      speed: v.v,
+      distanceToStopLine: v.route.stopLineS - v.s,
+      held: v.held,
+    }));
   }
 
   snapshot(): SimSnapshot {

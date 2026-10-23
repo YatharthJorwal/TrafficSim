@@ -1,4 +1,5 @@
-import { DEFAULT_TIMING, SignalStateMachine, TWO_PHASE_PLAN, type Measurements, type PhaseDef, type PhaseId, type SignalController, type SignalStatus, type SignalTiming } from '../control';
+import { DEFAULT_TIMING, SignalStateMachine, TWO_PHASE_PLAN, type PhaseDef, type PhaseId, type SignalController, type SignalStatus, type SignalTiming } from '../control';
+import { DetectorSystem, createDetectorConfig, type DetectorConfig } from '../detectors';
 import { SimulationEngine } from '../sim/engine';
 import type { Arrival, SignalStates, SimConfig, SimSnapshot } from '../sim/types';
 
@@ -9,8 +10,8 @@ export interface RunnerOptions {
   phases?: readonly PhaseDef[];
   timing?: SignalTiming;
   initialPhase?: PhaseId;
-  /** Supplies detector measurements to the controller (added with the detector layer). */
-  measurements?: (engine: SimulationEngine) => Measurements | undefined;
+  /** Detector zone settings (zone length, observation window, ...). */
+  detectors?: Partial<DetectorConfig>;
 }
 
 export interface RunnerSnapshot extends SimSnapshot {
@@ -22,18 +23,19 @@ export interface RunnerSnapshot extends SimSnapshot {
 
 /**
  * Wires engine, signal state machine and controller together in a fixed order each tick:
- *   1. controller decides from the current status and measurements, and submits a request
+ *   1. controller decides from the current status and detector measurements, and submits a request
  *   2. the machine's colours for [t, t+dt) are applied to the engine
  *   3. the engine advances one step
- *   4. the machine advances one step (and may start a transition)
+ *   4. the detectors sample the new vehicle positions
+ *   5. the machine advances one step (and may start a transition)
  * Nothing here depends on rendering, so results are identical at any frame rate.
  */
 export class SimulationRunner {
   readonly engine: SimulationEngine;
   readonly machine: SignalStateMachine;
   readonly controller: SignalController;
+  readonly detectors: DetectorSystem;
 
-  private readonly measure?: (engine: SimulationEngine) => Measurements | undefined;
   private override: SignalStates | null = null;
 
   constructor(config: SimConfig, controller: SignalController, options: RunnerOptions = {}) {
@@ -48,7 +50,7 @@ export class SimulationRunner {
       diagnostics: options.diagnostics,
       signals: this.machine.colors,
     });
-    this.measure = options.measurements;
+    this.detectors = new DetectorSystem(createDetectorConfig(options.detectors, config.vehicle.length));
     this.controller.reset();
   }
 
@@ -63,12 +65,13 @@ export class SimulationRunner {
         time: this.engine.time,
         dt,
         signal: this.machine.status,
-        measurements: this.measure?.(this.engine),
+        measurements: this.detectors.measurements,
       });
       if (request) this.machine.request(request.phase);
     }
     this.engine.setSignals(this.override ?? this.machine.colors);
     this.engine.step();
+    this.detectors.update(this.engine.time, dt, this.engine.observe());
     if (!this.override) this.machine.step(dt);
   }
 
@@ -82,6 +85,7 @@ export class SimulationRunner {
     this.override = null;
     this.engine.reset();
     this.machine.reset();
+    this.detectors.reset();
     this.controller.reset();
     this.engine.setSignals(this.machine.colors);
   }

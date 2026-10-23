@@ -2,17 +2,17 @@
 
 Browser-based simulation of one four-way intersection comparing fixed-time and adaptive signal control.
 
-**Status: milestone 2 of 8 done - engine core plus signal state machine and fixed-time controller.**
-Detectors, the adaptive controller, experiments, the 3D scene and the dashboard come in later milestones.
+**Status: milestone 3 of 8 done - engine, signal control, virtual detectors and a live 3D view.**
+The adaptive controller, experiments, comparison dashboard, Blender assets and AI extension come in later milestones.
 Start with `CLAUDE.md` and `docs/HANDOFF.md`; the plan is in `docs/TODO.md`.
 
 ## Run
 
 ```bash
 npm install
-npm test               # 50 unit tests
+npm test               # 82 tests
 npm run sim:headless -- 1 300 1800 60   # seed, veh/h/approach, seconds, cycle seconds
-npm run dev            # 2D debug view (placeholder for the 3D scene)
+npm run dev            # 3D app with live detector panel
 npm run apply -- <bundle.zip>   # apply a delivered bundle (see docs/BUNDLES.md)
 ```
 
@@ -24,9 +24,11 @@ src/sim/       pure TypeScript engine (no React / Three.js imports)
   rng.ts         seeded PRNG           schedule.ts  arrival schedule from config + seed
   network.ts     lanes, routes, conflict matrix     engine.ts  fixed-step simulation
   collision.ts   body-overlap diagnostic            debugSignals.ts  engine test fixture
+src/detectors/ virtual detector zones, observed and estimated measurements
 src/control/   phases, SignalStateMachine, controllers (fixed-time now, adaptive in M4)
-src/runtime/   SimulationRunner (engine + machine + controller)
-src/ui/        debug view (reads runner snapshots only)
+src/runtime/   SimulationRunner, FixedStepLoop, interpolation
+src/render/    React Three Fiber scene (reads the loop, never writes sim state)
+src/ui/        toolbar and live panel
 scripts/       headless runner
 tools/         apply-bundle.mjs
 docs/          SPEC, ARCHITECTURE, RULES, DECISIONS, HANDOFF, TODO, BUNDLES

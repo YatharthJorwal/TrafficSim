@@ -87,6 +87,21 @@ export interface VehicleSnapshot extends Pose {
   held: boolean;
 }
 
+/** Cheap read-only view of one vehicle, for detectors and the renderer. */
+export interface VehicleObservation {
+  id: number;
+  routeIndex: number;
+  approach: Approach;
+  movement: Movement;
+  /** Arc length of the front bumper along its route (m). */
+  s: number;
+  speed: number;
+  /** Front bumper to stop line: positive upstream, negative once past the line. */
+  distanceToStopLine: number;
+  /** True while held back by a signal or a right-of-way yield (as of the last step). */
+  held: boolean;
+}
+
 export interface SimSnapshot {
   time: number;
   vehicles: VehicleSnapshot[];

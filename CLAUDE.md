@@ -26,6 +26,7 @@ npm run apply -- $HOME\Downloads\<bundle>.zip
 - One milestone at a time. Stop at the end of each milestone for approval. Never generate the whole app at once.
 - Deliver changes as a **bundle** (zip of changed files) plus exact apply commands. See `docs/BUNDLES.md`.
 - Give commands one per line, copy-pasteable, with no trailing comments.
+- If something cannot be verified (for example, how the 3D scene looks), say so plainly and list what the owner should check.
 - Run `npm test` and `npm run typecheck` before delivering. Report what actually passed, and report unfavourable results honestly.
 - Update `docs/HANDOFF.md`, `docs/TODO.md` and `CHANGELOG.md` in every bundle. Add an entry to `docs/DECISIONS.md` for any non-obvious choice.
 

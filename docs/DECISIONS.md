@@ -14,3 +14,9 @@
 | D10 | Red entries are counted, not suppressed | Honest reporting of dilemma-zone cases | accepted |
 | D11 | Deliver changes as bundles applied with `npm run apply` | Owner preference; git can undo any bundle | accepted |
 | D12 | Yellow "sneaker" for stopped left-turners | Tried; caused red entries (cannot stop under jerk limit) | rejected |
+| D13 | Detectors see only presence and speed inside a zone; waiting time = time stopped in the zone | Behaves like a real camera/loop; controllers cannot cheat with routes or intentions | accepted |
+| D14 | Zone length 80 m with an explicit overflow flag | A longer queue is under-counted; say so instead of hiding it | accepted |
+| D15 | `Measurements` types live in `src/detectors`; `control` re-exports them | Keeps the dependency direction control -> detectors -> sim | accepted |
+| D16 | Simulation advances from the R3F frame loop through a plain-TS `FixedStepLoop` | Testable without React; frame rate cannot change results | accepted |
+| D17 | Engine stays on the main thread for now | About 1800x real time; a Worker adds complexity without need | accepted, revisit in M5 if experiments feel slow |
+| D18 | 3D scene verified with a headless scene-graph test renderer | No browser in the build sandbox; geometry/state links are asserted, looks are reviewed by the owner | accepted |

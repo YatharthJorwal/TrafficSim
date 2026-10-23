@@ -20,7 +20,7 @@ export const GEOMETRY = {
 
 export const OPPOSITE: Record<Approach, Approach> = { N: 'S', S: 'N', E: 'W', W: 'E' };
 
-const ARM_DIR: Record<Approach, Vec2> = {
+export const ARM_DIR: Record<Approach, Vec2> = {
   N: { x: 0, y: 1 },
   E: { x: 1, y: 0 },
   S: { x: 0, y: -1 },

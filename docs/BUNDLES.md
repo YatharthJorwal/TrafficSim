@@ -35,4 +35,5 @@ git clean -fd
 ## Notes
 - The tool never writes outside the repo, or into `.git/` or `node_modules/`.
 - `--no-test` skips the test run; `--force` skips the clean-tree check. Avoid both.
-- The very first bundle (M2) predates the tool, so it is applied by extracting the zip over the project. See the delivery message.
+- The M2 bundle predates the tool and was applied by extracting the zip. From M3 on every bundle goes through `npm run apply`.
+- `BUNDLE.json` example: `{ "name": "M3", "description": "...", "commitMessage": "M3: detectors and 3D scene", "delete": [] }`
