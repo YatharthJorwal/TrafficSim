@@ -4,11 +4,12 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 
-export type CameraPresetName = 'overview' | 'closeup' | 'top';
+export type CameraPresetName = 'overview' | 'closeup' | 'street' | 'top';
 
 export const CAMERA_PRESETS: Record<CameraPresetName, { label: string; position: [number, number, number] }> = {
-  overview: { label: 'Overview', position: [62, 58, 78] },
-  closeup: { label: 'Intersection', position: [19, 11, 24] },
+  overview: { label: 'Overview', position: [26, 112, 52] },
+  closeup: { label: 'Intersection', position: [4, 16, 32] },
+  street: { label: 'Street', position: [-1.8, 2.5, 36] },
   top: { label: 'Top-down', position: [0, 125, 0.01] },
 };
 

@@ -14,7 +14,8 @@ and reproducible experiments. Optional, isolated local-AI extension. Works with 
 | E1 | Compact square environment, four blocks around a central four-way intersection, two-way roads | M3/M7 | done (placeholder scenery, M7 replaces) |
 | E2 | Explicit lane geometry, stop lines, box boundary, entry/exit points; left/straight/right routes | M1 | done |
 | E3 | Signal heads clearly visible in 3D; overview and close-up cameras | M3 | done (not yet reviewed by eye) |
-| E4 | Blender-made environment and vehicles exported as optimised GLB | M7 | todo |
+| E4 | Blender-made environment and vehicles exported as optimised GLB | M7 | partial: procedural low-poly assets generated in code (M3.1); a Blender/GLB pipeline is optional later |
+| E5 | (owner extension) Ambient pedestrians, crosswalks, sky, terrain, richer vehicles | M3.1 | done |
 | V1 | Vehicles follow explicit routes (waypoints / spline) | M1 | done |
 | V2 | Configurable arrival rates and route (turn) mix per approach | M1 | done |
 | V3 | Bounded speed variation, smooth acceleration/deceleration | M1 | done |

@@ -2,7 +2,7 @@
 
 Browser-based simulation of one four-way intersection comparing fixed-time and adaptive signal control.
 
-**Status: milestone 3 of 8 done - engine, signal control, virtual detectors and a live 3D view.**
+**Status: milestone 3 of 8 done (plus visual polish) - engine, signal control, virtual detectors and a live low-poly 3D city.**
 The adaptive controller, experiments, comparison dashboard, Blender assets and AI extension come in later milestones.
 Start with `CLAUDE.md` and `docs/HANDOFF.md`; the plan is in `docs/TODO.md`.
 
@@ -10,7 +10,7 @@ Start with `CLAUDE.md` and `docs/HANDOFF.md`; the plan is in `docs/TODO.md`.
 
 ```bash
 npm install
-npm test               # 82 tests
+npm test               # 115 tests
 npm run sim:headless -- 1 300 1800 60   # seed, veh/h/approach, seconds, cycle seconds
 npm run dev            # 3D app with live detector panel
 npm run apply -- <bundle.zip>   # apply a delivered bundle (see docs/BUNDLES.md)
@@ -27,7 +27,8 @@ src/sim/       pure TypeScript engine (no React / Three.js imports)
 src/detectors/ virtual detector zones, observed and estimated measurements
 src/control/   phases, SignalStateMachine, controllers (fixed-time now, adaptive in M4)
 src/runtime/   SimulationRunner, FixedStepLoop, interpolation
-src/render/    React Three Fiber scene (reads the loop, never writes sim state)
+src/ambient/   cosmetic pedestrians and shared street layout (reads the sim, never changes it)
+src/render/    React Three Fiber scene: scenery/ (city, terrain generators), models/ (vehicles), components
 src/ui/        toolbar and live panel
 scripts/       headless runner
 tools/         apply-bundle.mjs
@@ -37,7 +38,7 @@ docs/          SPEC, ARCHITECTURE, RULES, DECISIONS, HANDOFF, TODO, BUNDLES
 ## Model summary
 
 - World: metres, +x east, +y north, right-hand traffic, one lane per direction per arm, arms 100 m long,
-  intersection box 10 m x 10 m, stop lines 6 m from centre. Twelve routes (4 approaches x left/straight/right).
+  intersection box 10 m x 10 m, stop lines 9.5 m from centre (crosswalks sit between line and box). Twelve routes (4 approaches x left/straight/right).
 - Time: fixed step (default 0.05 s). `time = steps * dt`, so results do not depend on frame rate.
 - Determinism: the full arrival schedule (times, turns, per-vehicle speed factor in +-10 %) is generated
   up front from the seed, one independent stream per approach. The simulation itself uses no randomness.

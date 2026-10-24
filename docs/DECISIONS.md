@@ -20,3 +20,9 @@
 | D16 | Simulation advances from the R3F frame loop through a plain-TS `FixedStepLoop` | Testable without React; frame rate cannot change results | accepted |
 | D17 | Engine stays on the main thread for now | About 1800x real time; a Worker adds complexity without need | accepted, revisit in M5 if experiments feel slow |
 | D18 | 3D scene verified with a headless scene-graph test renderer | No browser in the build sandbox; geometry/state links are asserted, looks are reviewed by the owner | accepted |
+| D19 | Stop line moved from 6 m to 9.5 m (crosswalk 5.7-8.7 m) | The old 1 m gap between line and box left no room for a crosswalk | accepted; capacity about 4 % lower |
+| D20 | Scenery and vehicles are procedural geometry in code, not Blender GLBs, for now | Deterministic, testable in node, no binary assets; a GLB pipeline can replace them later | accepted |
+| D21 | Pedestrians are a cosmetic `ambient` layer that only reads the sim | Cannot affect any result; removable at any time | accepted |
+| D22 | Pedestrians cross only on the parallel green, within 0.4-3.0 s of it starting, and only if no car could arrive first | Cars do not yield in the sim, so peds avoid conflicts instead; crossing is done by 11.7 s, inside minGreen + yellow + all-red | accepted |
+| D23 | Vehicles scale in and out over 12 m at the arm ends | Hides the spawn/despawn point without changing the sim | accepted |
+

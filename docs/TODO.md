@@ -25,6 +25,15 @@
 - [x] Headless scene-graph tests
 - [ ] Owner visual review of the scene (fix list goes here)
 
+## M3.1 - Visual polish (done)
+- [x] Sky, clouds, terrain, trees, city blocks with windows/awnings/rooftops, park, pavements, lamps
+- [x] Road markings and zebra crosswalks; pedestrian signals
+- [x] Four vehicle types with brake lights and indicators; fade in/out at arm ends
+- [x] Cosmetic pedestrians with phase-aware crossing and car-gap checks
+- [x] Street camera, shadows toggle, pedestrians toggle
+- [x] Tests (geometry, models, crowd safety, scene graph) and screenshots reviewed in a headless browser
+- [ ] Owner visual review (fix list goes here)
+
 ## M4 - Adaptive controller and safety validation
 - [ ] Left-turn handling per owner decision (A sneakers / B protected lefts)
 - [ ] Rule-based adaptive controller (queue, approaching, waiting time, min/max green, max wait)
@@ -44,8 +53,8 @@
 - [ ] Time-series charts from detector data
 
 ## M7 - Blender assets and polish
-- [ ] Environment and vehicle GLBs, optimisation, restrained visual design
-- [ ] Entry/exit portals instead of fog fade-in
+- [ ] Optional: Blender/GLB replacements for the procedural models (only if wanted)
+- [ ] Entry/exit portals (currently vehicles scale in/out)
 
 ## M8 - Optional local AI
 - [ ] Structured I/O contract, validator, timeout/fallback, logging, evaluation vs baseline
@@ -55,3 +64,5 @@
 - [ ] Web Worker for the engine
 - [ ] Vehicle size variation, time-varying demand
 - [ ] Longer detector zone option in the UI
+- [ ] Make cars yield to pedestrians in the sim (would change results; needs a decision)
+- [ ] Check pedestrian crossing time against the adaptive controller's min green (crowd assumes crossing finishes by 11.7 s)

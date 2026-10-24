@@ -7,8 +7,8 @@ export const GEOMETRY = {
   laneOffset: 1.75,
   /** Intersection box half-width. */
   boxHalf: 5,
-  /** Stop line distance from the intersection centre. */
-  stopLineDist: 6,
+  /** Stop line distance from the intersection centre (leaves room for a crosswalk between line and box). */
+  stopLineDist: 9.5,
   /** Distance from centre to vehicle entry / exit points. */
   armLength: 100,
   /** Paths closer than this inside the box are treated as conflicting. */

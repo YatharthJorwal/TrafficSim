@@ -23,7 +23,7 @@ export function createDetectorConfig(overrides: Partial<DetectorConfig> = {}, ve
   const config = { ...DEFAULT_DETECTOR_CONFIG, ...(vehicleLength !== undefined ? { vehicleLength } : {}), ...overrides };
   const e: string[] = [];
   const ok = (n: number) => Number.isFinite(n);
-  if (!ok(config.zoneLength) || config.zoneLength < 10 || config.zoneLength > 94) e.push('zoneLength must be between 10 and 94 m');
+  if (!ok(config.zoneLength) || config.zoneLength < 10 || config.zoneLength > 90) e.push('zoneLength must be between 10 and 90 m');
   if (!ok(config.observationWindow) || config.observationWindow < 5) e.push('observationWindow must be at least 5 s');
   if (!ok(config.stoppedSpeed) || config.stoppedSpeed <= 0 || config.stoppedSpeed > 3) e.push('stoppedSpeed must be in (0, 3] m/s');
   if (!ok(config.queueChainGap) || config.queueChainGap <= 0) e.push('queueChainGap must be positive');

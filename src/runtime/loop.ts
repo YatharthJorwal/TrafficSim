@@ -15,13 +15,25 @@ export class FixedStepLoop {
   running = true;
 
   private acc = 0;
-  private _prev: VehicleObservation[];
-  private _curr: VehicleObservation[];
+  private _prev: readonly VehicleObservation[];
+  private _curr: readonly VehicleObservation[];
+  private stepListeners = new Set<(runner: SimulationRunner) => void>();
+  private resetListeners = new Set<() => void>();
 
   constructor(runner: SimulationRunner) {
     this.runner = runner;
-    this._curr = runner.engine.observe();
+    this._curr = runner.lastObservations;
     this._prev = this._curr;
+  }
+
+  /** Called after every simulation step (for cosmetic layers such as pedestrians). Returns an unsubscribe function. */
+  onStep(fn: (runner: SimulationRunner) => void): () => void {
+    this.stepListeners.add(fn);
+    return () => this.stepListeners.delete(fn);
+  }
+  onReset(fn: () => void): () => void {
+    this.resetListeners.add(fn);
+    return () => this.resetListeners.delete(fn);
   }
 
   get prev(): readonly VehicleObservation[] {
@@ -48,17 +60,32 @@ export class FixedStepLoop {
       this.acc = Math.max(0, this.acc - steps * dt);
     }
     for (let i = 0; i < steps; i++) {
-      if (i === steps - 1) this._prev = this.runner.engine.observe();
+      if (i === steps - 1) this._prev = this.runner.lastObservations;
       this.runner.tick();
+      for (const fn of this.stepListeners) fn(this.runner);
     }
-    if (steps > 0) this._curr = this.runner.engine.observe();
+    if (steps > 0) this._curr = this.runner.lastObservations;
     return steps;
+  }
+
+  /** Advance the simulation by `seconds` of simulated time immediately and refresh the render buffers. */
+  fastForward(seconds: number): void {
+    const dt = this.runner.engine.config.dt;
+    const steps = Math.max(0, Math.round(seconds / dt));
+    for (let i = 0; i < steps; i++) {
+      if (i === steps - 1) this._prev = this.runner.lastObservations;
+      this.runner.tick();
+      for (const fn of this.stepListeners) fn(this.runner);
+    }
+    if (steps > 0) this._curr = this.runner.lastObservations;
+    this.acc = 0;
   }
 
   reset(): void {
     this.runner.reset();
     this.acc = 0;
-    this._curr = this.runner.engine.observe();
+    this._curr = this.runner.lastObservations;
     this._prev = this._curr;
+    for (const fn of this.resetListeners) fn();
   }
 }

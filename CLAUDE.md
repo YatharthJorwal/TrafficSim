@@ -31,7 +31,7 @@ npm run apply -- $HOME\Downloads\<bundle>.zip
 - Update `docs/HANDOFF.md`, `docs/TODO.md` and `CHANGELOG.md` in every bundle. Add an entry to `docs/DECISIONS.md` for any non-obvious choice.
 
 ## Non-negotiables (details in docs/RULES.md)
-- `src/sim` and `src/control` never import React or Three.js. The renderer only reads snapshots.
+- `src/sim`, `src/detectors` and `src/control` never import React or Three.js. The renderer only reads snapshots. `src/ambient` (pedestrians) is cosmetic: it reads the sim and must never change it.
 - The simulation is deterministic: no `Math.random`, no wall-clock time, fixed timestep.
 - Only `SignalStateMachine` owns real signal state. Controllers (rule-based or AI) can only *request* a phase.
 - Both controllers must get the identical arrival schedule. Never tune the baseline to make adaptive look good.

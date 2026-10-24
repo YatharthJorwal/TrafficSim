@@ -1,5 +1,19 @@
 # Changelog
 
+## M3.1 - visual polish and ambient life
+- Scene rebuilt as a procedural low-poly city: sky with drifting clouds, faceted terrain with hills, trees, four city blocks of
+  towers / mid-rises / shops (windows, awnings, rooftop plant, antennas) and a park, pavements and curbs, lamps, double-yellow
+  centre lines, edge lines and zebra crosswalks. Real-time shadows (toggle).
+- Four vehicle types (sedan, hatchback, SUV, van) with glass, wheels and trim, tinted bodies, brake lights and blinking indicators.
+  Vehicles grow in and shrink out at the arm ends instead of popping.
+- Cosmetic pedestrians (`src/ambient`): low-poly walkers on a sidewalk graph that cross only on the right phase and when no car
+  could arrive, plus pedestrian signal heads at every crosswalk.
+- New Street camera, Overview reframed; Pedestrians and Shadows toggles.
+- ENGINE: the stop line moved from 6 m to 9.5 m so a crosswalk fits between it and the box (capacity about 4 % lower).
+- `FixedStepLoop`: `onStep` / `onReset` listeners, `fastForward`; runner shares one observation per tick (`lastObservations`).
+- 115 tests (33 new): scenery geometry, vehicle models, crowd safety (never crosses on the wrong phase, never overlaps a car in 900 s),
+  interpolation extras, richer headless scene-graph tests. Visuals reviewed in a real headless browser (software GL).
+
 ## M3 - detectors and 3D scene
 - Added `src/detectors`: per-approach zones with observed measurements, derived demand estimate, arrival/departure events, totals and peaks.
 - Engine `observe()`; runner now owns a `DetectorSystem` and feeds `Measurements` to controllers every tick.

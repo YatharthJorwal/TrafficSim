@@ -11,7 +11,8 @@
 - `src/detectors` virtual detector zones. Reads `VehicleObservation`s; never touches the engine. Defines `Measurements`.
 - `src/control`  signal phases, state machine, controllers. Imports `sim` and `detectors` types only. Does not import the engine.
 - `src/runtime`  `SimulationRunner` (the only place engine, detectors, machine and controller meet), `FixedStepLoop`, `interpolateVehicles`.
-- `src/render`   R3F scene (reads the loop; never writes simulation state).  `src/ui` toolbar and live panel.
+- `src/ambient`  cosmetic life (pedestrians) and the shared street layout constants. Reads `sim`; nothing else imports it except `render`.
+- `src/render`   R3F scene (reads the loop; never writes simulation state). `scenery/` and `models/` are pure geometry generators.  `src/ui` toolbar and live panel.
 - `src/analytics` (M5) metrics, experiment runner, export.
 - Nothing below `ui` may import React or Three.js.
 
@@ -58,6 +59,17 @@
   three.js objects directly. React state is only used by `Hud`, which polls 4x per second in its own component, so the scene
   never re-renders because of the HUD, and rendering never triggers engine work.
 - Sim (x east, y north) maps to three.js `(x, up, -y)`. Vehicles are two instanced meshes; signal heads and stop lines glow in the engine's signal colour.
+
+## Scenery, vehicles, pedestrians (M3.1)
+- `render/scenery/city.ts`, `terrain.ts`: deterministic generators (seeded, no `Math.random`) returning merged vertex-coloured geometry
+  plus tree and lamp positions. Tested in node: nothing intrudes on the roadway, windows sit on buildings, corner lots stay low.
+- `render/models/vehicleModels.ts`: four low-poly vehicle types built from an extruded side profile plus glass, wheels, lamps.
+  Bodies are instance-tinted; brake and indicator lights are separate instanced meshes switched per vehicle.
+- `interpolateVehicles` also derives `braking`, `indicator` and `fade` from consecutive observations (render-only).
+- `ambient/crowd.ts`: pedestrians walk a fixed sidewalk graph, crossing arms at crosswalks 7.2 m out. They start crossing only inside a
+  short window after the parallel road turns green and only if no car could reach the crosswalk before they are across (cars do not
+  yield in the simulation). The crowd is stepped by `FixedStepLoop.onStep`, so it follows simulation time, pause and speed.
+- Debug hooks: `window.__trafficSim` (the loop) and `window.__r3f` (R3F store) exist for tooling; nothing in the app reads them.
 
 ## Planned
 - Experiments (M5): paired runs sharing one schedule, metrics from `completed` + stats + detector totals, CSV/JSON export.

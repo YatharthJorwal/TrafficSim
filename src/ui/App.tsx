@@ -14,10 +14,17 @@ export default function App() {
   const [speed, setSpeed] = useState(1);
   const [running, setRunning] = useState(true);
   const [showDetectors, setShowDetectors] = useState(true);
+  const [showPedestrians, setShowPedestrians] = useState(true);
+  const [shadows, setShadows] = useState(true);
   const [camera, setCamera] = useState<CameraRequest>({ name: 'overview', nonce: 0 });
 
   // A new loop (runner + engine + detectors) only when the scenario itself changes.
   const loop = useMemo(() => makeLoop({ seed, rate, cycle }), [seed, rate, cycle]);
+
+  useEffect(() => {
+    // Debug hook (used by screenshot tooling to fast-forward). Nothing in the app reads it.
+    (window as unknown as { __trafficSim?: unknown }).__trafficSim = loop;
+  }, [loop]);
 
   useEffect(() => {
     loop.speed = speed;
@@ -62,11 +69,19 @@ export default function App() {
           <input type="checkbox" checked={showDetectors} onChange={(e) => setShowDetectors(e.target.checked)} />
           Detector zones
         </label>
+        <label className="check">
+          <input type="checkbox" checked={showPedestrians} onChange={(e) => setShowPedestrians(e.target.checked)} />
+          Pedestrians
+        </label>
+        <label className="check">
+          <input type="checkbox" checked={shadows} onChange={(e) => setShadows(e.target.checked)} />
+          Shadows
+        </label>
         <span className="muted small plan">{describePlan(cycle)}</span>
       </div>
       <div className="main">
         <div className="viewport">
-          <Viewport loop={loop} showDetectors={showDetectors} camera={camera} />
+          <Viewport loop={loop} showDetectors={showDetectors} showPedestrians={showPedestrians} shadows={shadows} camera={camera} />
           <div className="cams">
             {(Object.keys(CAMERA_PRESETS) as CameraPresetName[]).map((n) => (
               <button key={n} className={camera.name === n ? 'on' : ''} onClick={() => pick(n)}>
