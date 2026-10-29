@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "sim:headless": "tsx scripts/headless.ts",
-    "apply": "node tools/apply-bundle.mjs"
+    "apply": "node tools/apply-bundle.mjs",
+    "sim:compare": "tsx scripts/compare.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

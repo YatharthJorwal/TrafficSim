@@ -1,10 +1,10 @@
 # Handoff
 
-Last updated: end of milestone 3 + visual polish (M3.1) + ring road and persistent vehicles (M3.2).
+Last updated: end of milestone 4 (adaptive controller + left-turn pockets), after M3.2 (ring road, persistent vehicles).
 
 ## State
 - M1 engine core and M2 signal control: done and pushed. M3 detectors + 3D scene: done in this bundle.
-- 143 tests pass. `npm run typecheck` and `npm run build` pass.
+- 160 tests pass. `npm run typecheck` and `npm run build` pass.
 - `npm run dev` opens the 3D app: toolbar (play/pause/reset/speed, signal mode, cycle, demand, seed, detector toggle),
   3D viewport with Overview / Intersection / Top-down camera buttons, and a live side panel (clock, counters, signal
   state, detector measurements split into Observed / Estimated, safety counters).
@@ -43,25 +43,39 @@ Owner review is still the final word: report anything that looks off (colours, s
 - `tools/apply-bundle.mjs`  applies bundles (`npm run apply -- <zip>`).
 
 ## Decisions waiting on the owner
-- **Left turns (blocks M4 realism):** A = keep the shared lane and add end-of-green "sneakers" (needs an in-box waiting pocket);
-  B = dedicated left-turn lane with protected left phases. Still not chosen. M4 needs this before the adaptive controller is tuned.
+- None blocking. M5 will need confirmation of the metric definitions in docs/SPEC.md.
+
+## Where the adaptive controller stands (honest preview, `npm run sim:compare -- 1800 4`, identical schedules, means over 4 seeds)
+| profile | controller | cleared/h | unserved | mean wait (exited) | worst wait |
+|---|---|---|---|---|---|
+| light (120/approach) | fixed 60 s | 441 | 5 | 7.6 s | 33 s |
+| | adaptive | 443 | 4 | 3.5 s | 21 s |
+| balanced (250) | fixed | 960 | 20 | 21.2 s | 118 s |
+| | adaptive | 962 | 19 | 20.6 s | 113 s |
+| uneven (N/S 450, E/W 100) | fixed 50/50 | 782 | 132 | 62.3 s | 185 s |
+| | fixed, split tuned to demand | 995 | 26 | 22.8 s | 193 s |
+| | adaptive | 970 | 38 | 27.7 s | 104 s |
+| heavy (400) | fixed | 1077 | 248 | 91.6 s | 218 s |
+| | adaptive | 1076 | 249 | 90.0 s | 180 s |
+Reading: adaptive clearly beats a *mismatched* fixed plan and halves the wait when traffic is light, ties at balanced and heavy demand, and is slightly
+**behind** a fixed plan tuned to the exact steady demand (but with a far better worst-case wait). That is the expected result: with steady, known demand a
+tuned fixed plan is hard to beat. Caveats: "mean wait" here is over vehicles that exited only (survivor bias; M5 fixes this), 4 seeds, no parameter tuning yet.
+The case where adaptive should win outright is demand that changes over time; M5 should include such a profile.
 
 ## Known issues / limitations
-- Opposing left-turn paths overlap in this compact box, so they are mutually exclusive. With a shared lane, a
-  left-turner at the head can block its queue for a whole green when the opposing flow is saturated. Capacity is about
-  1000 veh/h total with 20 % lefts under a 60 s cycle.
+- Left turns use pockets (option A). Opposing left-turners are mutually exclusive (their paths cross in this compact box), so at an extreme 100 % lefts
+  capacity is about 20 % lower than before; at the default 20 % lefts it is 8-9 % higher. Capacity is about 1000-1100 veh/h total.
 - Rare dilemma-zone red entries are counted in `redLightEntries` (about 1 in 100 stress runs; 0 in all tests).
 - Detector zone is 80 m by default. A queue longer than the zone is under-counted and flagged (`zoneOverflow`, shown as "≥").
 - Vehicles scale in and out over 12 m at the arm ends; there are no entry/exit portals.
 - The engine runs on the main thread (about 1800x real time headless). A Web Worker is deferred until it is needed.
 - Scenery is procedural low-poly (generated in code). A Blender/GLB pipeline is optional and not started.
 
-## Next steps (M4)
-1. Get the left-turn decision (A or B) and implement it first, since it changes capacity and phases.
-2. Rule-based `AdaptiveController` behind `SignalController`, using `Measurements`: queue, approaching count, accumulated
-   wait, min/max green, max permissible wait, phase compatibility. Requests only; the machine stays the safety gate.
-3. Tests: never unsafe, no starvation, max-wait respected, deterministic, falls back sensibly when measurements are zero.
-4. Add the adaptive controller to the UI selector.
+## Next steps (M5: experiments and metrics)
+1. Confirm the metric definitions in docs/SPEC.md (cleared/hour, mean wait over *all* generated vehicles including backlog, max queue, utilisation).
+2. Experiment runner: paired runs on shared schedules, demand profiles (light, balanced, uneven, heavy, plus a shifting profile), several seeds, spread reporting.
+3. Baselines: default fixed plan and a demand-tuned fixed plan. Adaptive parameter sensitivity.
+4. Tests with hand-computed metric cases. Promote `scripts/compare.ts` into the framework and delete the preview.
 
 ## How to verify a fresh checkout
 ```

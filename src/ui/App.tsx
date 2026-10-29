@@ -4,7 +4,7 @@ import type { TrafficMode } from '../sim/types';
 import { CAMERA_PRESETS, type CameraPresetName, type CameraRequest } from '../render/CameraRig';
 import { Viewport } from '../render/Viewport';
 import { Hud } from './Hud';
-import { applySignalMode, describePlan, makeLoop, type SignalMode } from './simFactory';
+import { applySignalMode, describePlan, makeLoop, type ControllerKind, type SignalMode } from './simFactory';
 
 const SPEEDS = [1, 2, 5, 10, 20, 50];
 
@@ -16,6 +16,7 @@ export default function App() {
   const [rebuild, setRebuild] = useState(0);
   const [cycle, setCycle] = useState(60);
   const [mode, setMode] = useState<SignalMode>('controller');
+  const [controllerKind, setControllerKind] = useState<ControllerKind>('adaptive');
   const [speed, setSpeed] = useState(1);
   const [running, setRunning] = useState(true);
   const [showDetectors, setShowDetectors] = useState(true);
@@ -28,8 +29,8 @@ export default function App() {
   const fleetRef = useRef(fleet);
   fleetRef.current = fleet;
   const loop = useMemo(
-    () => makeLoop({ seed, rate, cycle, mode: trafficMode, fleet: fleetRef.current }),
-    [seed, rate, cycle, trafficMode, rebuild],
+    () => makeLoop({ seed, rate, cycle, mode: trafficMode, fleet: fleetRef.current, controller: controllerKind }),
+    [seed, rate, cycle, trafficMode, controllerKind, rebuild],
   );
 
   useEffect(() => {
@@ -63,18 +64,26 @@ export default function App() {
             {SPEEDS.map((s) => <option key={s} value={s}>{s}x</option>)}
           </select>
         </label>
+        <label>Controller
+          <select value={controllerKind} onChange={(e) => setControllerKind(e.target.value as ControllerKind)}>
+            <option value="adaptive">Adaptive (detector-driven)</option>
+            <option value="fixed">Fixed-time</option>
+          </select>
+        </label>
         <label>Signals
           <select value={mode} onChange={(e) => setMode(e.target.value as SignalMode)}>
-            <option value="controller">Fixed-time controller</option>
+            <option value="controller">Controller output</option>
             <option value="green">Debug: all green</option>
             <option value="red">Debug: all red</option>
           </select>
         </label>
-        <label>Cycle
-          <select value={cycle} onChange={(e) => setCycle(Number(e.target.value))}>
-            {[40, 60, 90, 120].map((c) => <option key={c} value={c}>{c} s</option>)}
-          </select>
-        </label>
+        {controllerKind === 'fixed' && (
+          <label>Cycle
+            <select value={cycle} onChange={(e) => setCycle(Number(e.target.value))}>
+              {[40, 60, 90, 120].map((c) => <option key={c} value={c}>{c} s</option>)}
+            </select>
+          </label>
+        )}
         <label>Traffic
           <select value={trafficMode} onChange={(e) => setTrafficMode(e.target.value as TrafficMode)}>
             <option value="circulating">Circulating fleet</option>
@@ -109,7 +118,7 @@ export default function App() {
           <input type="checkbox" checked={shadows} onChange={(e) => setShadows(e.target.checked)} />
           Shadows
         </label>
-        <span className="muted small plan">{describePlan(cycle)}</span>
+        <span className="muted small plan">{describePlan(cycle, controllerKind)}</span>
       </div>
       <div className="main">
         <div className="viewport">

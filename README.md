@@ -2,7 +2,7 @@
 
 Browser-based simulation of one four-way intersection comparing fixed-time and adaptive signal control.
 
-**Status: milestone 3 of 8 done (plus polish) - engine, signal control, virtual detectors and a live low-poly 3D city with a ring road and a persistent, circulating fleet.**
+**Status: milestone 4 of 8 done (plus polish) - engine, signal control, virtual detectors and a live low-poly 3D city with a ring road and a persistent, circulating fleet.**
 The adaptive controller, experiments, comparison dashboard, Blender assets and AI extension come in later milestones.
 Start with `CLAUDE.md` and `docs/HANDOFF.md`; the plan is in `docs/TODO.md`.
 
@@ -10,8 +10,9 @@ Start with `CLAUDE.md` and `docs/HANDOFF.md`; the plan is in `docs/TODO.md`.
 
 ```bash
 npm install
-npm test               # 143 tests
+npm test               # 160 tests
 npm run sim:headless -- 1 300 1800 60   # seed, veh/h/approach, seconds, cycle seconds
+npm run sim:compare -- 1800 4           # quick fixed vs adaptive preview (seconds, seeds)
 npm run dev            # 3D app with live detector panel
 npm run apply -- <bundle.zip>   # apply a delivered bundle (see docs/BUNDLES.md)
 ```
@@ -25,7 +26,7 @@ src/sim/       pure TypeScript engine (no React / Three.js imports)
   network.ts     lanes, routes, conflict matrix     engine.ts  fixed-step simulation
   collision.ts   body-overlap diagnostic            debugSignals.ts  engine test fixture
 src/detectors/ virtual detector zones, observed and estimated measurements
-src/control/   phases, SignalStateMachine, controllers (fixed-time now, adaptive in M4)
+src/control/   phases, SignalStateMachine, controllers (fixed-time and adaptive)
 src/runtime/   SimulationRunner, FixedStepLoop, interpolation
 src/ambient/   cosmetic pedestrians and shared street layout (reads the sim, never changes it)
 src/render/    React Three Fiber scene: scenery/ (city, terrain generators), models/ (vehicles), components

@@ -44,6 +44,25 @@
 5. `machine.step(dt)` (may start a transition)
 `setDebugOverride` bypasses 1 and 4 for inspection only and is flagged in snapshots.
 
+## Left-turn pockets (`src/sim/engine.ts`)
+- A left-turner has two steps: *enter* the box and *leave* its pocket. Entering (`conflictBlocked(v, false)`) ignores oncoming through traffic
+  (it passes 3.5 m away) but not perpendicular traffic, occupants, or an oncoming left-turner. The pocket is `route.pocketS` = box entry + 2.5 m;
+  a vehicle is "waiting" there below 1 m/s, within 3 m of it (stopping is asymptotic).
+- Leaving (`conflictBlocked(v, true)`) needs a gap in oncoming through traffic, using the same arrival-time ordering as a permissive left, and only
+  trusts an oncoming car to stop if it can do so at the comfortable 2 m/s^2 (not the 3 m/s^2 yellow decision). Waiting left-turners have no priority
+  over oncoming traffic; two oncoming left-turners never share the box (lower id keeps the pocket).
+- Queue heads stuck behind a waiting left-turner are marked `pocketBlocked` and do not hold anyone else up (breaks wait cycles when there are no signals).
+- `network.divergence[a][b]`: arc length at which two main routes from the same arm are more than 3 m apart. Followers treat a vehicle ahead on
+  another route as a leader until its rear has passed that point, so a straight car cannot drive into a waiting left-turner.
+
+## Adaptive controller (`src/control/adaptive.ts`)
+- Pressure of a phase = per green approach: queued vehicles + 0.4 x approaching + 0.12 x average wait (s). Observed detector values only.
+- While a green has run at least `minGreen` (12 s), in priority order: (1) max wait: another phase has a vehicle that waited >= 75 s -> serve it;
+  (2) nobody waiting elsewhere -> stay; (3) green >= `maxGreen` (50 s) -> switch; (4) gap-out: no queue and <= 1 approaching -> switch;
+  (5) another phase has >= 1.5 x the pressure (and >= 2) -> switch.
+- It only requests. The machine enforces yellow, all-red, min and max green, conflicts, and the 60 s watchdog. Config is validated against the safety timing.
+- `decisions` records every switch with the pressures at that moment; `describe()` feeds the side panel.
+
 ## Traffic modes and the ring road (`src/sim`)
 - `arrivals`: open boundary. Arrivals come from the seeded Poisson schedule and vehicles are removed at the arm ends. **Experiments use this.**
 - `circulating`: a fixed fleet (`config.fleet`, 1-48) spawns round robin at the four arm entries (2.5 s apart per entry). After leaving

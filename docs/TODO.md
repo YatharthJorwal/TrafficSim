@@ -42,16 +42,21 @@
 - [x] Tests across seeds and signal timings
 - [ ] Owner review (fix list goes here)
 
-## M4 - Adaptive controller and safety validation
-- [ ] Left-turn handling per owner decision (A sneakers / B protected lefts)
-- [ ] Rule-based adaptive controller (queue, approaching, waiting time, min/max green, max wait)
-- [ ] Phase-compatibility checks, request validation tests
-- [ ] Tests: no starvation, max-wait respected, never unsafe
-- [ ] Controller selector in the UI
+## M4 - Adaptive controller and safety validation (done)
+- [x] Left-turn handling, option A (pockets and end-of-green sneakers)
+- [x] Rule-based adaptive controller (queue, approaching, waiting time, min/max green, max wait)
+- [x] Phase-compatibility and request validation tests (hostile controllers, unknown phases, config vs safety timing)
+- [x] Tests: no starvation, max-wait respected, never unsafe, deterministic, safe in circulating mode
+- [x] Controller selector in the UI, decision reasons in the panel
+- [x] Quick fixed vs adaptive preview (`npm run sim:compare`)
+- [ ] Owner review
 
 ## M5 - Experiments and metrics
 - [ ] Metric calculators per SPEC (cleared/hour, mean wait, max queue, utilisation, time stopped)
-- [ ] Demand profiles (light, balanced, uneven, heavy) calibrated to real capacity
+- [ ] Demand profiles (light, balanced, uneven, heavy) calibrated to real capacity (about 1000-1100 veh/h total with 20 % lefts)
+- [ ] Add a shifting-demand profile (the mix changes mid-run): that is where an adaptive controller should beat even a tuned fixed plan
+- [ ] Baselines: default 60 s fixed plan AND a demand-tuned fixed plan (Webster-style) per profile
+- [ ] Sensitivity of adaptive parameters (min/max green, switch ratio, max wait), reported without tuning the baseline
 - [ ] Paired runs on shared schedules, multiple seeds, spread reporting
 - [ ] Metric tests with hand-computed cases
 

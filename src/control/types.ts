@@ -73,6 +73,8 @@ export interface SignalController {
   readonly name: string;
   reset(): void;
   decide(input: ControllerInput): PhaseRequest | null;
+  /** Optional one-line explanation of the latest decision, for the UI and logs. */
+  describe?(): string;
 }
 
 export class ControlConfigError extends Error {

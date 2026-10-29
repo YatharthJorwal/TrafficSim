@@ -1,6 +1,6 @@
 import { assertValidConfig, MAX_FLEET } from './config';
 import { obbOverlap } from './collision';
-import { GEOMETRY, NETWORK, RING_PATH, poseAt, type Network, type Route } from './network';
+import { GEOMETRY, NETWORK, OPPOSITE, RING_PATH, poseAt, type Network, type Route } from './network';
 import { SPAWN_INTERVAL, fleetArrival, generateSchedule, pickMovement } from './schedule';
 import { deriveSeed, mulberry32 } from './rng';
 import {
@@ -27,6 +27,8 @@ const MERGE_WINDOW = 2.0;
 const ETA_MIN_SPEED = 2.0;
 /** A vehicle only commits to stopping on yellow if it can do so at this deceleration (m/s^2). */
 const YELLOW_STOP_DECEL = 3.0;
+/** A waiting left-turner may sit this far beyond its nominal pocket position (it stops asymptotically) and is still held (m). */
+const POCKET_SLACK = 3;
 /** Hard anti-overlap guard threshold (m). */
 const HARD_MIN_GAP = 0.1;
 /** Held vehicles aim to stop this far short of the stop line, so numerical creep never crosses it (m). */
@@ -90,6 +92,8 @@ interface Vehicle {
   eta: number;
   key: number;
   sigBlocked: boolean;
+  /** Queue head that cannot go because a left-turner is waiting in the box across its path. */
+  pocketBlocked: boolean;
   held: boolean;
   leader: Vehicle | null;
   leaderGap: number;
@@ -407,6 +411,7 @@ export class SimulationEngine {
         eta: 0,
         key: Infinity,
         sigBlocked: false,
+        pocketBlocked: false,
         held: false,
         leader: null,
         leaderGap: Infinity,
@@ -482,6 +487,7 @@ export class SimulationEngine {
       v.leaderOffset = 0;
       v.held = false;
       v.sigBlocked = false;
+      v.pocketBlocked = false;
       v.ringU = NaN;
 
       if (r.kind === 'main') {
@@ -537,12 +543,24 @@ export class SimulationEngine {
       for (let i = 0; i + 1 < lane.length; i++) {
         const v = lane[i];
         const w = lane[i + 1];
-        if (v.laneS < LANE_END && w.laneS - len < LANE_END) {
+        // Routes from the same arm share their lane until they pull apart: a left-turner waiting in its pocket
+        // still blocks the vehicles behind it until it has really swung out of their way.
+        const lim = v.route.kind === 'main' && w.route.kind === 'main' ? Math.max(LANE_END, this.network.divergence[v.route.index][w.route.index]) : LANE_END;
+        if (v.laneS < lim && w.laneS - len < lim) {
           v.leader = w;
           v.leaderGap = w.laneS - len - v.laneS;
           v.leaderOffset = w.laneOff - v.laneOff;
         }
       }
+    }
+
+    // A head stuck behind a waiting left-turner cannot go, so it must not hold up anyone else (this breaks the
+    // wait cycle that would otherwise form at an intersection without signals).
+    for (const w of this.heads) {
+      const row = this.network.conflicts[w.route.index];
+      w.pocketBlocked = this.occupants.some(
+        (o) => this.isWaiting(o) && o.route.approach !== w.route.approach && o.route.approach !== OPPOSITE[w.route.approach] && row[o.route.index] !== 'none',
+      );
     }
 
     for (const a of APPROACHES) {
@@ -625,25 +643,61 @@ export class SimulationEngine {
 
   // ---------------------------------------------------------------- right of way
 
-  private conflictBlocked(v: Vehicle): boolean {
-    const row = this.network.conflicts[v.route.index];
+  /** A left-turner sitting in its pocket (a little way into the box), waiting for a gap. */
+  private isWaiting(w: Vehicle): boolean {
+    const r = w.route;
+    return r.kind === 'main' && r.movement === 'left' && w.s >= r.stopLineS && w.s <= r.pocketS + POCKET_SLACK && w.v < 1.0;
+  }
 
-    // 1. Anything already committed to the box has absolute priority.
+  /**
+   * Is `v` held back by right-of-way?
+   *
+   * Left-turners work in two steps. To *enter* the box (asPocket = false) they only have to keep clear of
+   * what actually conflicts with their pocket: oncoming through traffic passes 3.5 m away, so it does not
+   * stop them. To *leave* the pocket and finish the turn (asPocket = true) they need a gap in oncoming
+   * traffic, exactly like a permissive left. A waiting left-turner has no priority over oncoming traffic,
+   * and two oncoming left-turners never share the box (their paths cross), so the lower id keeps the pocket.
+   * At the end of green the oncoming vehicles that can stop do so, and the waiting left-turner clears the box.
+   */
+  private conflictBlocked(v: Vehicle, asPocket: boolean): boolean {
+    const r = v.route;
+    const row = this.network.conflicts[r.index];
+    const left = r.movement === 'left';
+    const opposite = OPPOSITE[r.approach];
+    const myKey = asPocket ? LEFT_PENALTY : v.key;
+    const myEta = asPocket ? 0 : v.eta;
+
+    // 1. Anything already committed to the box has priority.
     for (const w of this.occupants) {
+      if (w === v) continue;
       const kind = row[w.route.index];
       if (kind === 'none') continue;
+      const opposing = w.route.approach === opposite;
+      if (left && !asPocket && opposing && w.route.movement !== 'left') continue; // oncoming through traffic misses the pocket
+      if (opposing && this.isWaiting(w)) {
+        if (left && w.route.movement === 'left' && (!asPocket || w.id < v.id)) return true; // one left-turner at a time
+        continue; // oncoming traffic does not give way to a waiting left-turner
+      }
       if (kind === 'crossing') return true;
       if (w.s < w.route.boxExitS) return true; // merging, and w has not yet reached the merge point
     }
 
     // 2. Competing queue heads: total order by (estimated arrival + left-turn penalty, id).
     for (const w of this.heads) {
-      if (w === v || w.route.approach === v.route.approach) continue;
+      if (w === v || w.route.approach === r.approach) continue;
       const kind = row[w.route.index];
-      if (kind === 'none' || w.sigBlocked) continue;
-      const wins = w.key < v.key || (w.key === v.key && w.id < v.id);
+      if (kind === 'none' || w.pocketBlocked) continue;
+      // A left-turner leaving its pocket only trusts an oncoming car to stop if it can do so comfortably.
+      if (w.sigBlocked && (!asPocket || (w.v * w.v) / (2 * this.p.comfortDecel) <= w.route.stopLineS - w.s)) continue;
+      if (asPocket) {
+        // already in the box: queue heads give way to it, so it only has to wait for a gap in oncoming traffic
+        if (w.route.approach !== opposite || w.route.movement === 'left') continue;
+      } else if (left && w.route.approach === opposite && w.route.movement !== 'left') {
+        continue; // entering: oncoming through traffic does not matter
+      }
+      const wins = w.key < myKey || (w.key === myKey && w.id < v.id);
       if (!wins) continue;
-      if (kind === 'merging' && Math.abs(w.eta - v.eta) >= MERGE_WINDOW) continue;
+      if (kind === 'merging' && Math.abs(w.eta - myEta) >= MERGE_WINDOW) continue;
       return true;
     }
     return false;
@@ -689,10 +743,15 @@ export class SimulationEngine {
       let acc = this.idm(v.v, v0, v.leaderGap, v.leader ? v.leader.v : 0);
 
       if (route.kind === 'main') {
-        if (v.s < route.stopLineS && (v.sigBlocked || this.conflictBlocked(v))) {
+        if (v.s < route.stopLineS && (v.sigBlocked || this.conflictBlocked(v, false))) {
           v.held = true;
           // Virtual stopped vehicle placed so the held vehicle halts STOP_MARGIN short of the stop line.
           const gap = route.stopLineS - STOP_MARGIN + p.minGap - v.s;
+          acc = Math.min(acc, this.idm(v.v, v0, gap, 0));
+        } else if (route.movement === 'left' && (v.s < route.pocketS + 0.3 || (v.v < 1.5 && v.s < route.pocketS + POCKET_SLACK)) && this.conflictBlocked(v, true)) {
+          // A left-turner may pull into the box, but waits in its pocket until there is a gap.
+          v.held = true;
+          const gap = route.pocketS - STOP_MARGIN + p.minGap - v.s;
           acc = Math.min(acc, this.idm(v.v, v0, gap, 0));
         } else if (this.circulating && route.length - v.s < YIELD_LOOKAHEAD && !this.canMerge(v)) {
           // Give way to ring traffic at the end of the arm.
@@ -755,7 +814,8 @@ export class SimulationEngine {
 
       const r = v.route;
       if (r.kind === 'main') {
-        if (v.s < r.stopLineS && v.v < 0.5) v.waitingTime += dt;
+        // waiting counts until the vehicle is really through: a left-turner sitting in its pocket is still waiting
+        if (v.s < (r.movement === 'left' ? r.pocketS + POCKET_SLACK : r.stopLineS) && v.v < 0.5) v.waitingTime += dt;
         if (v.v < 0.1) v.stoppedTime += dt;
 
         if (oldS < r.stopLineS && v.s >= r.stopLineS) {

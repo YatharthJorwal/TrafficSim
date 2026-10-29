@@ -32,4 +32,11 @@
 | D28 | Ring vehicles skip an arm whose entry queue has spilled back, and nobody enters the box without room beyond it | Prevents the ring-to-arm-to-box gridlock that appeared at 60+ vehicles | accepted |
 | D29 | Fleet changes: raising adds vehicles live, lowering restarts | Removing vehicles live would make them vanish, which is exactly what this mode avoids | accepted |
 | D30 | Reset in the UI rebuilds the simulation with the current settings | Keeps the fleet and mode in sync with the controls | accepted |
+| D31 | Left turns: option A, shared lane with an in-box pocket and end-of-green sneakers | Owner choice; a left-turner at the head no longer blocks its queue for a whole green | accepted (replaces D5's open question) |
+| D32 | One left-turner per oncoming pair in the box at a time | Their paths cross near the centre | accepted |
+| D33 | A waiting left-turner trusts an oncoming car to stop only at 2 m/s^2 | The 3 m/s^2 yellow decision let cars carry on into the box (found by the hostile-controller test) | accepted |
+| D34 | Same-arm followers treat a vehicle ahead as a leader until the routes are 3 m apart | A straight car must not drive into a waiting left-turner | accepted |
+| D35 | Adaptive controller uses observed detector values only, with simple pressure rules | Transparent and deterministic; estimates can be wrong | accepted |
+| D36 | Adaptive minimum green is 12 s | Keeps the pedestrian crossing window (done by 11.7 s) inside the green | accepted |
+| D37 | Compare adaptive against both the default and a demand-tuned fixed plan | A 50/50 fixed plan is a weak baseline for uneven demand | accepted; formalised in M5 |
 

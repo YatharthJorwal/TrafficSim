@@ -14,6 +14,10 @@ export const GEOMETRY = {
   /** Paths closer than this inside the box are treated as conflicting. */
   crossingClearance: 3.0,
   curveSamples: 24,
+  /** How far into the box a waiting left-turner pulls forward (front bumper), in metres. */
+  pocketDepth: 2.5,
+  /** Two routes from the same arm count as separate once their centre lines are this far apart (m). */
+  divergeDist: 3.0,
   /** Speed limit through turns. */
   turnSpeed: { left: 5.0, right: 4.0 },
 } as const;
@@ -75,6 +79,11 @@ export interface Route {
   boxExitS: number;
   /** Speed limit in the turn (Infinity for straight movements). */
   turnSpeed: number;
+  /**
+   * Left turns only: where the front bumper stops to wait for a gap, a little way into the box and clear of the
+   * oncoming through lane. From here a left-turner can finish its turn at the end of green. Infinity otherwise.
+   */
+  pocketS: number;
   limits: LimitSegment[];
   signals: TurnSignal[];
   /** Connectors only: arc length where the exit arc ends and the ring begins / ends and the turn into the arm begins. */
@@ -92,6 +101,11 @@ export interface Network {
   route(approach: Approach, movement: Movement): Route;
   /** Connector from the exit of arm `from`, round the ring, into arm `to`. */
   connector(from: Approach, to: Approach): Route;
+  /**
+   * Main routes from the same arm share their lane until they pull apart. `divergence[a][b]` is the arc length at
+   * which routes a and b are further apart than GEOMETRY.divergeDist (Infinity for the same route, 0 for other arms).
+   */
+  divergence: readonly (readonly number[])[];
 }
 
 function buildRoute(index: number, approach: Approach, movement: Movement): Route {
@@ -147,6 +161,7 @@ function buildRoute(index: number, approach: Approach, movement: Movement): Rout
     boxEnterS,
     boxExitS,
     turnSpeed,
+    pocketS: movement === 'left' ? boxEnterS + GEOMETRY.pocketDepth : Infinity,
     limits: turnSpeed === Infinity ? [] : [{ s0: boxEnterS, s1: boxExitS, speed: turnSpeed }],
     signals,
     ringStartS: Infinity,
@@ -311,6 +326,7 @@ function buildConnector(index: number, from: Approach, to: Approach): Route {
     boxEnterS: Infinity,
     boxExitS: -Infinity,
     turnSpeed: Infinity,
+    pocketS: Infinity,
     limits,
     signals: [{ s0: 0, s1: ringStartS + 2, side: 'right' }, { s0: Math.max(ringEndS - 15, 0), s1: length, side: 'right' }],
     ringStartS,
@@ -339,8 +355,22 @@ export function buildNetwork(): Network {
   for (const from of APPROACHES) for (const to of APPROACHES) routes.push(buildConnector(routes.length, from, to));
   const conflicts = routes.map((a) => routes.map((b) => (a.kind === 'main' && b.kind === 'main' ? classify(a, b) : ('none' as ConflictKind))));
   const lookup = new Map(routes.map((r) => [r.id, r]));
+  const divergence = routes.map((a) =>
+    routes.map((b) => {
+      if (a === b) return Infinity;
+      if (a.kind !== 'main' || b.kind !== 'main' || a.approach !== b.approach) return 0;
+      const end = Math.min(a.boxExitS, b.boxExitS);
+      for (let s = a.boxEnterS - 1; s <= end; s += 0.25) {
+        const pa = poseAt(a, s);
+        const pb = poseAt(b, s);
+        if (Math.hypot(pa.x - pb.x, pa.y - pb.y) > GEOMETRY.divergeDist) return s;
+      }
+      return end;
+    }),
+  );
   return {
     routes,
+    divergence,
     conflicts,
     route: (approach, movement) => lookup.get(`${approach}-${movement}`)!,
     connector: (from, to) => lookup.get(`C-${from}-${to}`)!,

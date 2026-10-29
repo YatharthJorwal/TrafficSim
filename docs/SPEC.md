@@ -31,7 +31,7 @@ and reproducible experiments. Optional, isolated local-AI extension. Works with 
 | D3 | Live visualisation of detector activation and the data given to the controller | M3 | done (3D overlay + panel) |
 | C1 | Controller interface; controllers only request phases | M2 | done |
 | C2 | Fixed-time: configurable cycle and phase sequence, explicit yellow and all-red | M2 | done |
-| C3 | Adaptive rule-based: queue, approaching count, waiting time, min/max green, max wait, phase compatibility | M4 | todo |
+| C3 | Adaptive rule-based: queue, approaching count, waiting time, min/max green, max wait, phase compatibility | M4 | done |
 | C4 | Safety enforced independently of any controller: no conflicting greens, no skipped clearance | M2 | done |
 | A1 | Optional local-AI recommender, outside the timestep, structured I/O, validated, timeout + fallback, logged, evaluated vs baseline | M8 | todo |
 | X1 | Same arrival schedule, route mix, duration and seed for both controllers | M1/M5 | engine done (arrivals mode), experiment runner todo. Circulating mode gives each vehicle the same route choices, but arrival timing is endogenous, so it is not used for experiments |

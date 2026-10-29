@@ -1,5 +1,17 @@
 # Changelog
 
+## M4 - adaptive controller and left-turn pockets
+- **Left-turn pockets (option A):** a left-turner may pull 2.5 m into the box, clear of the oncoming through lane, and wait there for a gap. At the
+  end of green the oncoming cars that can stop do so and the waiting left-turner clears the box ("sneakers"). One left-turner per oncoming pair
+  at a time; the waiting car has no priority over oncoming traffic; followers wait until it has swung clear (new per-route-pair divergence points).
+  About 8-9 % more capacity at 20 % lefts; at an extreme 100 % lefts capacity is about 20 % lower (one at a time).
+- **`AdaptiveController`:** transparent rule-based controller behind the existing `SignalController` interface. Reads detector measurements
+  (observed values only) and requests phases; the state machine stays the safety gate. Rules: max wait, no demand, max green, gap-out, pressure ratio.
+  Greens last 12-50 s (12 s keeps the pedestrian crossing window intact). Every switch is logged with its reason and shown in the panel.
+- UI: Controller selector (Adaptive is the default), Cycle shown for fixed-time only.
+- `npm run sim:compare`: quick fixed vs adaptive preview on identical schedules (the full experiment framework is M5).
+- Tests: 160 (17 new adaptive tests: rule by rule on synthetic measurements, plus limits, safety, fairness, determinism, circulating mode).
+
 ## M3.2 - ring road and persistent vehicles
 - A square one-way ring road (clockwise, rounded corners) encloses the city; every arm now ends in a T-junction with it
   (right-turn slip roads in and out). Perimeter wall, direction chevrons, lamps and a tree line outside.

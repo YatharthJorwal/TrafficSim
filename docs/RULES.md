@@ -19,7 +19,7 @@
 ## Metrics and honesty
 11. Metrics follow `docs/SPEC.md` definitions exactly. Distinguish generated, inserted, entered and exited.
 12. Distinguish observed detector values from estimates in names, types and UI labels.
-13. Run experiments in `arrivals` mode only: it is the mode where every controller gets an identical arrival schedule. Compare controllers on identical schedules. Report losses and ties as clearly as wins. Do not tune the baseline against the adaptive controller.
+13. Compare adaptive against a fixed plan tuned to the demand as well as the default one: a weak baseline flatters the adaptive controller. Run experiments in `arrivals` mode only: it is the mode where every controller gets an identical arrival schedule. Compare controllers on identical schedules. Report losses and ties as clearly as wins. Do not tune the baseline against the adaptive controller.
 
 ## Testing
 14. Every new behaviour gets a test. Safety properties (no overlap, no conflicting greens, no red entry, counts add up) are asserted, not assumed.

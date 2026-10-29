@@ -17,6 +17,7 @@ interface HudData {
   overlaps: number;
   guard: number;
   signalLine: string;
+  controllerNote: string;
   overridden: boolean;
   colors: Record<Approach, SignalColor>;
   m: Readonly<Measurements>;
@@ -42,6 +43,7 @@ function read(loop: FixedStepLoop): HudData {
     guard: s.safetyClamps,
     overridden,
     signalLine: `${r.controller.name} | phase ${snap.phase} | ${snap.stage} ${snap.elapsed.toFixed(1)}s${snap.nextPhase ? ` -> ${snap.nextPhase}` : ''}`,
+    controllerNote: r.controller.describe?.() ?? '',
     colors: { ...e.signals },
     m: r.detectors.measurements,
     backlog: { N: e.backlogCount('N'), E: e.backlogCount('E'), S: e.backlogCount('S'), W: e.backlogCount('W') },
@@ -87,6 +89,7 @@ export function Hud({ loop }: { loop: FixedStepLoop }) {
         <p className={d.overridden ? 'warn' : 'muted'}>
           {d.overridden ? 'DEBUG OVERRIDE: controller and safety layer bypassed' : d.signalLine}
         </p>
+        {!d.overridden && d.controllerNote && <p className="muted small">{d.controllerNote}</p>}
         <div className="lights">
           {APPROACHES.map((a) => (
             <span key={a} className="light">
