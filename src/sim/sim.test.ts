@@ -56,7 +56,7 @@ describe('network geometry', () => {
     expect(route('N', 'straight').exit).toBe('S');
   });
   it('places the stop line before the box', () => {
-    for (const r of NETWORK.routes) {
+    for (const r of NETWORK.routes.filter((x) => x.kind === 'main')) {
       expect(r.stopLineS).toBeLessThan(r.boxEnterS);
       expect(r.boxEnterS).toBeLessThan(r.boxExitS);
     }

@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { CROSSWALK_DIST, CROSSWALK_W } from '../../ambient/layout';
-import { GEOMETRY } from '../../sim/network';
+import { CROSSWALK_DIST, CROSSWALK_W, RING_ROAD_WIDTH } from '../../ambient/layout';
+import { GEOMETRY, RING_PATH } from '../../sim/network';
 import { BODY_COLORS, VEHICLE_TYPES, buildVehicleModel, vehicleTypeFor } from '../models/vehicleModels';
 import { buildCity } from './city';
+import { ringSamples } from './ring';
 import { FLAT_RADIUS, buildTerrain, scatterOutskirtTrees, terrainHeight } from './terrain';
 
 function vertices(g: THREE.BufferGeometry) {
@@ -33,10 +34,10 @@ describe('city generator', () => {
   });
 
   it('has a believable amount of city', () => {
-    expect(city.stats.buildings).toBeGreaterThanOrEqual(12);
-    expect(city.stats.towers).toBeGreaterThanOrEqual(2);
-    expect(city.stats.windows).toBeGreaterThan(500);
-    expect(city.stats.parks).toBe(1);
+    expect(city.stats.buildings).toBeGreaterThanOrEqual(30);
+    expect(city.stats.towers).toBeGreaterThanOrEqual(3);
+    expect(city.stats.windows).toBeGreaterThan(1500);
+    expect(city.stats.parks).toBe(2);
     expect(city.lamps.length).toBeGreaterThan(20);
     expect(city.trees.length).toBeGreaterThan(20);
   });
@@ -66,9 +67,20 @@ describe('city generator', () => {
     }
   });
 
-  it('keeps lamps and trees off the road', () => {
-    for (const l of city.lamps) expect(Math.min(Math.abs(l.x), Math.abs(l.z))).toBeGreaterThanOrEqual(3.5);
-    for (const t of city.trees) expect(Math.min(Math.abs(t.x), Math.abs(t.z))).toBeGreaterThanOrEqual(3.5);
+  it('keeps lamps and trees off the arms and the ring road', () => {
+    const ring = ringSamples(0, RING_PATH.length, 1);
+    const onRoad = (x: number, z: number) => {
+      if (Math.min(Math.abs(x), Math.abs(z)) < 3.5 && Math.max(Math.abs(x), Math.abs(z)) <= 106) return true; // an arm
+      return ring.some((p) => Math.hypot(p.x - x, p.y + z) < RING_ROAD_WIDTH / 2 + 0.2);
+    };
+    for (const l of city.lamps) expect(onRoad(l.x, l.z), `lamp ${l.x.toFixed(1)},${l.z.toFixed(1)}`).toBe(false);
+    for (const t of city.trees) expect(onRoad(t.x, t.z), `tree ${t.x.toFixed(1)},${t.z.toFixed(1)}`).toBe(false);
+  });
+
+  it('fills the space out to the ring road and no further', () => {
+    for (const [x, , z] of vertices(city.glass)) expect(Math.max(Math.abs(x), Math.abs(z))).toBeLessThanOrEqual(98.5);
+    city.glass.computeBoundingBox();
+    expect(city.glass.boundingBox!.max.x).toBeGreaterThan(80); // buildings really reach the outer part of each block
   });
 });
 
@@ -92,10 +104,7 @@ describe('terrain', () => {
     const trees = scatterOutskirtTrees();
     expect(trees.length).toBe(360);
     expect(scatterOutskirtTrees()).toEqual(trees);
-    for (const t of trees) {
-      expect(Math.abs(t.x) < 56 && Math.abs(t.z) < 56).toBe(false);
-      if (Math.hypot(t.x, t.z) < FLAT_RADIUS) expect(Math.abs(t.x) >= 14 && Math.abs(t.z) >= 14).toBe(true);
-    }
+    for (const t of trees) expect(Math.max(Math.abs(t.x), Math.abs(t.z))).toBeGreaterThanOrEqual(128);
   });
 });
 

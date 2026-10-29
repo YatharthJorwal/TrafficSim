@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Lamps } from './Lamps';
+import { RingRoad } from './RingRoad';
 import { Roads } from './Roads';
 import { Terrain } from './Terrain';
 import { Trees } from './Trees';
@@ -14,6 +15,7 @@ export function Environment() {
     <group name="environment">
       <Terrain />
       <Roads />
+      <RingRoad />
       <mesh name="city-solid" geometry={city.solid} castShadow receiveShadow>
         <meshStandardMaterial vertexColors flatShading roughness={0.92} />
       </mesh>

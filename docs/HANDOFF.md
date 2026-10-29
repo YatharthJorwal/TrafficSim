@@ -1,10 +1,10 @@
 # Handoff
 
-Last updated: end of milestone 3 + visual polish (M3.1).
+Last updated: end of milestone 3 + visual polish (M3.1) + ring road and persistent vehicles (M3.2).
 
 ## State
 - M1 engine core and M2 signal control: done and pushed. M3 detectors + 3D scene: done in this bundle.
-- 115 tests pass. `npm run typecheck` and `npm run build` pass.
+- 143 tests pass. `npm run typecheck` and `npm run build` pass.
 - `npm run dev` opens the 3D app: toolbar (play/pause/reset/speed, signal mode, cycle, demand, seed, detector toggle),
   3D viewport with Overview / Intersection / Top-down camera buttons, and a live side panel (clock, counters, signal
   state, detector measurements split into Observed / Estimated, safety counters).
@@ -14,6 +14,17 @@ Last updated: end of milestone 3 + visual polish (M3.1).
 M3.1 was reviewed in a real headless Chromium (software WebGL) with screenshots of every camera, shadows on and off, plus the
 headless scene-graph tests. Not verified: frame rate on a real GPU. If it feels slow, untick **Shadows** first, then **Pedestrians**.
 Owner review is still the final word: report anything that looks off (colours, scale, camera framing) and it goes in the TODO fix list.
+
+## Things to know about M3.2 (ring road and persistent vehicles)
+- **Two traffic modes.** `circulating` is the UI default: a fixed fleet (Vehicles selector, up to 48) spawns at the four arm entries, drives out
+  through an arm, round the one-way clockwise ring road and back in, forever. `arrivals` is the old open-boundary mode with Poisson arrivals.
+  **Experiments (M5) must use `arrivals`** so both controllers see identical arrival schedules.
+- Raising the fleet adds vehicles live at the four entries. Lowering it, changing mode or pressing Reset rebuilds the simulation.
+- Safe fleet limit is 48 (clean over many seeds and signal timings; 52+ jams and overlaps). The engine has gridlock protection: gap-acceptance
+  merging, no entering the box without room beyond it, and ring traffic skipping an arm whose queue has spilled back.
+- In `circulating` mode `stats.exited` counts arm exits (legs), `stats.inserted` is the fleet, and `completed` has one record per leg.
+- When the adaptive controller lands, run it through the circulating-mode sweeps too (fleet 20/40/48, several signal timings): short or
+  extreme greens change how the ring and the arms interact.
 
 ## Things to know about M3.1
 - The stop line is now 9.5 m from the centre (was 6 m) to make room for crosswalks. Engine results shift slightly (about 4 % lower capacity).

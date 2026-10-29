@@ -54,7 +54,18 @@ export interface VehicleParams {
   freeSpeed: number;
 }
 
+export type TrafficMode = 'arrivals' | 'circulating';
+
 export interface SimConfig {
+  /**
+   * 'arrivals': open boundary. Vehicles arrive from the Poisson schedule and are removed at the arm ends
+   * (this is the mode experiments use, so every controller sees identical arrivals).
+   * 'circulating': a fixed fleet that never disappears. Vehicles leave through an arm, drive round the ring
+   * road and come back in through an arm, forever.
+   */
+  mode: TrafficMode;
+  /** Number of vehicles in circulating mode. They spawn at the four arm entries, round robin. */
+  fleet: number;
   seed: number;
   /** Length of the arrival schedule / experiment horizon (s). */
   duration: number;
@@ -100,6 +111,10 @@ export interface VehicleObservation {
   distanceToStopLine: number;
   /** True while held back by a signal or a right-of-way yield (as of the last step). */
   held: boolean;
+  /** Legs completed (arm exits). 0 for a vehicle on its first pass. */
+  leg: number;
+  /** True in circulating mode: vehicles never leave, so renderers must not fade them out. */
+  persistent: boolean;
 }
 
 export interface SimSnapshot {

@@ -1,5 +1,20 @@
 # Changelog
 
+## M3.2 - ring road and persistent vehicles
+- A square one-way ring road (clockwise, rounded corners) encloses the city; every arm now ends in a T-junction with it
+  (right-turn slip roads in and out). Perimeter wall, direction chevrons, lamps and a tree line outside.
+- City blocks grown to fill the space out to the ring (about 40 buildings, 2 parks, 2000+ windows); heights fall away from the centre.
+- New **circulating** traffic mode (default in the UI): a fixed fleet spawns at the four arm entries, leaves through an arm, drives
+  round the ring and re-enters. Nothing ever disappears, so there is no poof. The Poisson **arrivals** mode is unchanged and is
+  still the mode experiments use.
+- Fleet is configurable (1-48). Raising it adds vehicles live at the four entries; lowering it restarts with the new number.
+- Engine: route legs (main <-> ring connectors), ring-lane leaders, merge gap acceptance, "don't block the box", skipping an arm whose
+  entry queue has spilled back to the ring, per-vehicle route streams (identical for every controller), `addVehicles`, generic overlap
+  diagnostic over the whole network.
+- Rendering: persistent vehicles never fade out, smooth hand-over between routes, right-turn indicators on the slip roads.
+- Tests: 143 (28 new): ring geometry and scenery, fleet schedule, persistence, safety on the ring over many seeds and signal timings,
+  determinism and fairness, live additions, UI factory.
+
 ## M3.1 - visual polish and ambient life
 - Scene rebuilt as a procedural low-poly city: sky with drifting clouds, faceted terrain with hills, trees, four city blocks of
   towers / mid-rises / shops (windows, awnings, rooftop plant, antennas) and a park, pavements and curbs, lamps, double-yellow

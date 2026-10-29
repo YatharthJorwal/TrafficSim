@@ -33,6 +33,7 @@ export function Pedestrians({ loop }: { loop: FixedStepLoop }) {
   const scratch = useMemo(() => ({ base: new THREE.Matrix4(), local: new THREE.Matrix4(), out: new THREE.Matrix4(), q: new THREE.Quaternion(), p: new THREE.Vector3(), s: new THREE.Vector3(), c: new THREE.Color() }), []);
 
   useEffect(() => {
+    crowd.reset();
     const dt = loop.runner.engine.config.dt;
     const length = loop.runner.engine.config.vehicle.length;
     const offStep = loop.onStep((r) =>

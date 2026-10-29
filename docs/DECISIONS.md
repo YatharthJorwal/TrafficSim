@@ -25,4 +25,11 @@
 | D21 | Pedestrians are a cosmetic `ambient` layer that only reads the sim | Cannot affect any result; removable at any time | accepted |
 | D22 | Pedestrians cross only on the parallel green, within 0.4-3.0 s of it starting, and only if no car could arrive first | Cars do not yield in the sim, so peds avoid conflicts instead; crossing is done by 11.7 s, inside minGreen + yellow + all-red | accepted |
 | D23 | Vehicles scale in and out over 12 m at the arm ends | Hides the spawn/despawn point without changing the sim | accepted |
+| D24 | Two traffic modes: `circulating` (persistent fleet, UI default) and `arrivals` (open boundary, experiments) | A closed loop never makes vehicles vanish, but its demand depends on the controller, which breaks the identical-arrivals rule | accepted |
+| D25 | One-way clockwise ring with right turns only | No crossing conflicts at the junctions; only merges, handled by gap acceptance | accepted |
+| D26 | Connectors share the ring path, so a vehicle can change target mid-ring | Lets ring traffic skip a full arm without jumping | accepted |
+| D27 | Fleet capped at 48 | 52+ starts to jam and overlap in the closed network; 48 is clean over many seeds and signal timings | accepted; revisit with a bigger ring or two lanes |
+| D28 | Ring vehicles skip an arm whose entry queue has spilled back, and nobody enters the box without room beyond it | Prevents the ring-to-arm-to-box gridlock that appeared at 60+ vehicles | accepted |
+| D29 | Fleet changes: raising adds vehicles live, lowering restarts | Removing vehicles live would make them vanish, which is exactly what this mode avoids | accepted |
+| D30 | Reset in the UI rebuilds the simulation with the current settings | Keeps the fleet and mode in sync with the controls | accepted |
 

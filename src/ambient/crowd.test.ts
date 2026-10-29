@@ -34,7 +34,7 @@ function distanceToGraph(x: number, y: number): number {
 
 const obs = (routeIndex: number, s: number, speed: number): VehicleObservation => {
   const r = NETWORK.routes[routeIndex];
-  return { id: 1, routeIndex, approach: r.approach, movement: r.movement, s, speed, distanceToStopLine: r.stopLineS - s, held: false };
+  return { id: 1, routeIndex, approach: r.approach, movement: r.movement, s, speed, distanceToStopLine: r.stopLineS - s, held: false, leg: 0, persistent: false };
 };
 
 describe('crossing permission', () => {

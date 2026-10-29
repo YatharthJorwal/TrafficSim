@@ -2,7 +2,7 @@
 
 Browser-based simulation of one four-way intersection comparing fixed-time and adaptive signal control.
 
-**Status: milestone 3 of 8 done (plus visual polish) - engine, signal control, virtual detectors and a live low-poly 3D city.**
+**Status: milestone 3 of 8 done (plus polish) - engine, signal control, virtual detectors and a live low-poly 3D city with a ring road and a persistent, circulating fleet.**
 The adaptive controller, experiments, comparison dashboard, Blender assets and AI extension come in later milestones.
 Start with `CLAUDE.md` and `docs/HANDOFF.md`; the plan is in `docs/TODO.md`.
 
@@ -10,7 +10,7 @@ Start with `CLAUDE.md` and `docs/HANDOFF.md`; the plan is in `docs/TODO.md`.
 
 ```bash
 npm install
-npm test               # 115 tests
+npm test               # 143 tests
 npm run sim:headless -- 1 300 1800 60   # seed, veh/h/approach, seconds, cycle seconds
 npm run dev            # 3D app with live detector panel
 npm run apply -- <bundle.zip>   # apply a delivered bundle (see docs/BUNDLES.md)
@@ -49,6 +49,9 @@ docs/          SPEC, ARCHITECTURE, RULES, DECISIONS, HANDOFF, TODO, BUNDLES
 - Right of way (inside the box): conflicts are derived from route geometry as *crossing* or *merging*.
   Vehicles committed to the box have priority; otherwise queue heads are ordered by estimated arrival
   (left-turners count as 3.5 s later, i.e. permissive-left gap acceptance). Merges use car-following in the exit lane.
+- Two traffic modes: **circulating** (a fixed fleet, 1-48 vehicles, loops through the junction and round the ring road forever; nothing
+  is ever removed) and **arrivals** (open boundary, Poisson arrivals from a seeded schedule; the mode experiments use so every controller
+  sees identical arrivals).
 - Counting: *generated* = scheduled arrivals whose time has passed; *inserted* = placed on the road
   (the difference is the entry backlog); *entered intersection* = front bumper crossed the stop line;
   *exited* = reached the end of the exit arm. Each is tracked per approach.

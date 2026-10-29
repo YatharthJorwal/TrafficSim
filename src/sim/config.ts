@@ -1,4 +1,4 @@
-import type { Approach, ApproachDemand, SimConfig, TurnMix, VehicleParams } from './types';
+import type { Approach, ApproachDemand, SimConfig, TrafficMode, TurnMix, VehicleParams } from './types';
 import { APPROACHES } from './types';
 
 export const DEFAULT_VEHICLE: VehicleParams = {
@@ -13,6 +13,9 @@ export const DEFAULT_VEHICLE: VehicleParams = {
   maxJerkDown: 15,
   freeSpeed: 13.9, // ~50 km/h
 };
+
+/** Largest fleet the ring road and junction carry cleanly (52+ starts to jam and overlap; verified over many seeds). */
+export const MAX_FLEET = 48;
 
 export const DEFAULT_TURN_MIX: TurnMix = { left: 0.2, straight: 0.6, right: 0.2 };
 
@@ -29,6 +32,8 @@ export function uniformDemand(
 }
 
 export interface ConfigOverrides {
+  mode?: TrafficMode;
+  fleet?: number;
   seed?: number;
   duration?: number;
   dt?: number;
@@ -47,6 +52,8 @@ export function createConfig(overrides: ConfigOverrides = {}): SimConfig {
     if (o.turnMix) demand[a].turnMix = { ...o.turnMix };
   }
   return {
+    mode: overrides.mode ?? 'arrivals',
+    fleet: overrides.fleet ?? 40,
     seed: overrides.seed ?? 1,
     duration: overrides.duration ?? 3600,
     dt: overrides.dt ?? 0.05,
@@ -70,6 +77,8 @@ const finite = (n: unknown): n is number => typeof n === 'number' && Number.isFi
 /** Returns a list of human-readable problems; empty means valid. */
 export function validateConfig(c: SimConfig): string[] {
   const e: string[] = [];
+  if (c.mode !== 'arrivals' && c.mode !== 'circulating') e.push("mode must be 'arrivals' or 'circulating'");
+  if (!Number.isInteger(c.fleet) || c.fleet < 0 || c.fleet > MAX_FLEET) e.push(`fleet must be a whole number from 0 to ${MAX_FLEET}`);
   if (!finite(c.seed)) e.push('seed must be a finite number');
   if (!finite(c.duration) || c.duration <= 0 || c.duration > 86400) e.push('duration must be in (0, 86400] seconds');
   if (!finite(c.dt) || c.dt < 0.01 || c.dt > 0.2) e.push('dt must be in [0.01, 0.2] seconds');

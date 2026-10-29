@@ -34,6 +34,14 @@
 - [x] Tests (geometry, models, crowd safety, scene graph) and screenshots reviewed in a headless browser
 - [ ] Owner visual review (fix list goes here)
 
+## M3.2 - Ring road and persistent vehicles (done)
+- [x] Ring road, slip roads, wall, chevrons, lamps; arms end at the ring
+- [x] City blocks out to the ring, two parks
+- [x] Circulating mode with a configurable fleet and live additions
+- [x] Merge gap acceptance, no box blocking, arm skipping, per-vehicle route streams
+- [x] Tests across seeds and signal timings
+- [ ] Owner review (fix list goes here)
+
 ## M4 - Adaptive controller and safety validation
 - [ ] Left-turn handling per owner decision (A sneakers / B protected lefts)
 - [ ] Rule-based adaptive controller (queue, approaching, waiting time, min/max green, max wait)
@@ -61,6 +69,8 @@
 
 ## Backlog / ideas
 - [ ] Dedicated left-turn lanes and protected phases (option B)
+- [ ] Raise the fleet limit (two ring lanes or a larger ring)
+- [ ] Run the adaptive controller through the circulating-mode safety sweeps (fleet 20/40/48, several signal timings)
 - [ ] Web Worker for the engine
 - [ ] Vehicle size variation, time-varying demand
 - [ ] Longer detector zone option in the UI

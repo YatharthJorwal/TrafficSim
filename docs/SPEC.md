@@ -16,6 +16,7 @@ and reproducible experiments. Optional, isolated local-AI extension. Works with 
 | E3 | Signal heads clearly visible in 3D; overview and close-up cameras | M3 | done (not yet reviewed by eye) |
 | E4 | Blender-made environment and vehicles exported as optimised GLB | M7 | partial: procedural low-poly assets generated in code (M3.1); a Blender/GLB pipeline is optional later |
 | E5 | (owner extension) Ambient pedestrians, crosswalks, sky, terrain, richer vehicles | M3.1 | done |
+| E6 | (owner extension) Square ring road around the city; persistent, configurable fleet that spawns at the four fixed entries | M3.2 | done |
 | V1 | Vehicles follow explicit routes (waypoints / spline) | M1 | done |
 | V2 | Configurable arrival rates and route (turn) mix per approach | M1 | done |
 | V3 | Bounded speed variation, smooth acceleration/deceleration | M1 | done |
@@ -33,7 +34,7 @@ and reproducible experiments. Optional, isolated local-AI extension. Works with 
 | C3 | Adaptive rule-based: queue, approaching count, waiting time, min/max green, max wait, phase compatibility | M4 | todo |
 | C4 | Safety enforced independently of any controller: no conflicting greens, no skipped clearance | M2 | done |
 | A1 | Optional local-AI recommender, outside the timestep, structured I/O, validated, timeout + fallback, logged, evaluated vs baseline | M8 | todo |
-| X1 | Same arrival schedule, route mix, duration and seed for both controllers | M1/M5 | engine done, experiment runner todo |
+| X1 | Same arrival schedule, route mix, duration and seed for both controllers | M1/M5 | engine done (arrivals mode), experiment runner todo. Circulating mode gives each vehicle the same route choices, but arrival timing is endogenous, so it is not used for experiments |
 | X2 | Metrics: vehicles cleared per simulated hour, mean waiting time, max queue length (+ throughput, avg queue, signal utilisation, time stopped) | M5 | todo |
 | X3 | Demand profiles: light, balanced, uneven directional, heavy; repeated runs | M5 | todo |
 | X4 | Comparison dashboard with numbers and charts; unfavourable results reported honestly | M6 | todo |

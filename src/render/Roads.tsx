@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { CROSSWALK_DIST, CROSSWALK_W, ROAD_HALF, ROAD_LENGTH } from '../ambient/layout';
+import { ARM_END, CROSSWALK_DIST, CROSSWALK_W, ROAD_HALF, ROAD_LENGTH } from '../ambient/layout';
 import { GEOMETRY } from '../sim/network';
 import { APPROACHES, type Approach } from '../sim/types';
 import { armPoint, flatScale, toWorld } from './coords';
@@ -62,10 +62,10 @@ export function Roads() {
       </mesh>
       {APPROACHES.map((arm) => (
         <group key={arm}>
-          <Strip arm={arm} lateral={-0.13} from={from} to={ROAD_LENGTH} width={0.1} color="#e3b62a" y={0.04} />
-          <Strip arm={arm} lateral={0.13} from={from} to={ROAD_LENGTH} width={0.1} color="#e3b62a" y={0.04} />
-          <Strip arm={arm} lateral={ROAD_HALF - 0.25} from={from} to={ROAD_LENGTH} width={0.12} color="#e8e8e2" y={0.04} />
-          <Strip arm={arm} lateral={-(ROAD_HALF - 0.25)} from={from} to={ROAD_LENGTH} width={0.12} color="#e8e8e2" y={0.04} />
+          <Strip arm={arm} lateral={-0.13} from={from} to={ARM_END} width={0.1} color="#e3b62a" y={0.04} />
+          <Strip arm={arm} lateral={0.13} from={from} to={ARM_END} width={0.1} color="#e3b62a" y={0.04} />
+          <Strip arm={arm} lateral={ROAD_HALF - 0.25} from={from} to={ARM_END} width={0.12} color="#e8e8e2" y={0.04} />
+          <Strip arm={arm} lateral={-(ROAD_HALF - 0.25)} from={from} to={ARM_END} width={0.12} color="#e8e8e2" y={0.04} />
         </group>
       ))}
       <Zebras />

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { BLOCK_SIZE, CROSSWALK_DIST, CROSSWALK_W, ROAD_HALF, ROAD_LENGTH, SIDEWALK_OUT, SIDEWALK_W } from '../../ambient/layout';
-import { GEOMETRY } from '../../sim/network';
+import { ARM_END, BLOCK_SIZE, CROSSWALK_DIST, CROSSWALK_W, RING_ROAD_WIDTH, RING_WALL_OFFSET, ROAD_HALF, SIDEWALK_OUT, SIDEWALK_W } from '../../ambient/layout';
+import { GEOMETRY, RING_PATH, ringPoseAt } from '../../sim/network';
 import { box, cylinder, ico, merge, onFace } from './geom';
 import { makeRng, type Rng } from './rand';
 
@@ -204,19 +204,35 @@ function park(c: Ctx, cx: number, cz: number, w: number, d: number) {
 
 interface Lot { u0: number; u1: number; v0: number; v1: number }
 
+/** Recursively halve the block until every lot is roughly 20-34 m across. */
 function splitBlock(rng: Rng): Lot[] {
-  const cols = rng.chance(0.4) ? [0, rng.range(13, 17), rng.range(28, 32), BLOCK_SIZE] : [0, rng.range(18, 27), BLOCK_SIZE];
   const lots: Lot[] = [];
-  for (let i = 0; i + 1 < cols.length; i++) {
-    const rows = rng.chance(0.65) ? [0, rng.range(18, 27), BLOCK_SIZE] : [0, BLOCK_SIZE];
-    for (let j = 0; j + 1 < rows.length; j++) lots.push({ u0: cols[i], u1: cols[i + 1], v0: rows[j], v1: rows[j + 1] });
-  }
+  const rec = (u0: number, u1: number, v0: number, v1: number) => {
+    const w = u1 - u0;
+    const d = v1 - v0;
+    const canW = w >= 44;
+    const canD = d >= 44;
+    if (!canW && !canD) {
+      lots.push({ u0, u1, v0, v1 });
+      return;
+    }
+    if (canW && (!canD || w >= d)) {
+      const c = u0 + w * rng.range(0.42, 0.58);
+      rec(u0, c, v0, v1);
+      rec(c, u1, v0, v1);
+    } else {
+      const c = v0 + d * rng.range(0.42, 0.58);
+      rec(u0, u1, v0, c);
+      rec(u0, u1, c, v1);
+    }
+  };
+  rec(0, BLOCK_SIZE, 0, BLOCK_SIZE);
   return lots;
 }
 
 function pavement(c: Ctx) {
-  const len = ROAD_LENGTH - ROAD_HALF;
-  const lenB = ROAD_LENGTH - SIDEWALK_OUT;
+  const len = ARM_END - ROAD_HALF;
+  const lenB = ARM_END - SIDEWALK_OUT;
   const cwLo = CROSSWALK_DIST - CROSSWALK_W / 2;
   const cwHi = CROSSWALK_DIST + CROSSWALK_W / 2;
   for (const sx of [1, -1]) {
@@ -224,7 +240,7 @@ function pavement(c: Ctx) {
       c.solid.push(box(SIDEWALK_W, 0.15, len, sx * (ROAD_HALF + SIDEWALK_W / 2), 0.075, sz * (ROAD_HALF + len / 2), SIDEWALK));
       c.solid.push(box(lenB, 0.15, SIDEWALK_W, sx * (SIDEWALK_OUT + lenB / 2), 0.075, sz * (ROAD_HALF + SIDEWALK_W / 2), SIDEWALK));
       // Curb lips, interrupted where the crosswalks cross them.
-      const segs: [number, number][] = [[ROAD_HALF, cwLo], [cwHi, ROAD_LENGTH]];
+      const segs: [number, number][] = [[ROAD_HALF, cwLo], [cwHi, ARM_END]];
       for (const [a, b] of segs) {
         c.solid.push(box(0.25, 0.19, b - a, sx * (ROAD_HALF + 0.125), 0.095, sz * ((a + b) / 2), CURB));
         c.solid.push(box(b - a, 0.19, 0.25, sx * ((a + b) / 2), 0.095, sz * (ROAD_HALF + 0.125), CURB));
@@ -234,16 +250,22 @@ function pavement(c: Ctx) {
   }
 }
 
+/** Downtown factor: 1 at the centre, falling towards the edge of the city. */
+const core = (x: number, z: number) => Math.min(1, Math.max(0.2, 1 - (Math.hypot(x, z) - 20) / 110));
+
 export function buildCity(seed = 7): CityParts {
   const rng = makeRng(seed);
   const c: Ctx = { solid: [], glass: [], trees: [], rng, stats: { buildings: 0, windows: 0, parks: 0, towers: 0 } };
   pavement(c);
 
   const quads = [{ sx: 1, sz: 1 }, { sx: -1, sz: 1 }, { sx: -1, sz: -1 }, { sx: 1, sz: -1 }];
-  let parkMade = false;
+  const parkQuads = new Set([3, 1]);
+  const parkDone = new Set<number>();
   quads.forEach((quad, qi) => {
     const lots = splitBlock(rng);
-    lots.forEach((lot, li) => {
+    // the largest lot far from the junction becomes a park in two of the blocks
+    const parkLot = parkQuads.has(qi) ? lots.filter((l) => l.u0 > 0 && l.v0 > 0).sort((a, b) => (b.u1 - b.u0) * (b.v1 - b.v0) - (a.u1 - a.u0) * (a.v1 - a.v0))[0] : undefined;
+    lots.forEach((lot) => {
       const gap = 1.3;
       const u0 = lot.u0 + gap;
       const u1 = lot.u1 - gap;
@@ -253,25 +275,27 @@ export function buildCity(seed = 7): CityParts {
       const d = v1 - v0;
       const cx = quad.sx * (SIDEWALK_OUT + (u0 + u1) / 2);
       const cz = quad.sz * (SIDEWALK_OUT + (v0 + v1) / 2);
-      const wantPark = !parkMade && qi === 3 && li === 0 && w > 14 && d > 14;
-      if (wantPark) {
+      if (lot === parkLot && w > 14 && d > 14) {
         park(c, cx, cz, w, d);
-        parkMade = true;
+        parkDone.add(qi);
         return;
       }
-      const area = w * d;
+      const f = core(cx, cz);
       const roll = rng.next();
-      // The lot touching the intersection corner stays low so the junction is always visible.
       if (lot.u0 === 0 && lot.v0 === 0) {
+        // the lot touching the intersection corner stays low so the junction is always visible
         if (roll < 0.5) shops(c, cx, cz, w, d, quad);
         else midrise(c, cx, cz, w, d, rng.range(9, 13), quad);
-      } else if (area < 170 || roll < 0.18) shops(c, cx, cz, w, d, quad);
-      else if (roll < 0.58 && w > 12 && d > 12) tower(c, cx, cz, w, d, rng.range(22, 44), quad);
-      else midrise(c, cx, cz, w, d, rng.range(10, 20), quad);
+      } else if (w * d < 170 || roll < 0.14) {
+        shops(c, cx, cz, w, d, quad);
+      } else if (roll < 0.14 + 0.5 * f && w > 12 && d > 12 && f > 0.45) {
+        tower(c, cx, cz, w, d, rng.range(22, 46) * (0.6 + 0.4 * f), quad);
+      } else {
+        midrise(c, cx, cz, w, d, rng.range(9, 20) * (0.55 + 0.5 * f), quad);
+      }
       c.stats.buildings++;
     });
   });
-  if (!parkMade) park(c, quads[3].sx * (SIDEWALK_OUT + 22), quads[3].sz * (SIDEWALK_OUT + 22), 30, 30);
 
   // Lamps and street trees along the four arms, alternating sides.
   const lamps: LampSpot[] = [];
@@ -280,7 +304,7 @@ export function buildCity(seed = 7): CityParts {
   for (const a of armDirs) {
     const perp = { x: Math.abs(a.z), z: Math.abs(a.x) };
     let i = 0;
-    for (let dist = GEOMETRY.stopLineDist + 8; dist < ROAD_LENGTH - 4; dist += 14, i++) {
+    for (let dist = GEOMETRY.stopLineDist + 8; dist < ARM_END - 4; dist += 14, i++) {
       for (const side of [1, -1]) {
         const lateral = side * (SIDEWALK_OUT - 0.6);
         const x = a.x * dist + perp.x * lateral;
@@ -291,6 +315,23 @@ export function buildCity(seed = 7): CityParts {
     }
   }
   for (const [sx, sz] of [[1, 1], [-1, 1], [-1, -1], [1, -1]]) lamps.push({ x: sx * (SIDEWALK_OUT - 0.7), z: sz * (SIDEWALK_OUT - 0.7), yaw: Math.atan2(-sx, -sz) });
+
+  // Ring road: lamps just outside the road, and a tree line beyond the perimeter wall.
+  const half = RING_ROAD_WIDTH / 2;
+  for (let u = 11; u < RING_PATH.length; u += 24) {
+    const p = ringPoseAt(u);
+    const out = { x: -Math.sin(p.heading), y: Math.cos(p.heading) }; // outward (left of a clockwise heading)
+    const near = RING_PATH.uMerge && [0, 1, 2, 3].some((k) => Math.abs(((u - (RING_PATH.uMerge.N + k * RING_PATH.quarterLen)) + RING_PATH.length) % RING_PATH.length) < 14);
+    if (near) continue; // keep the junctions clear
+    const off = half + 1.3;
+    lamps.push({ x: p.x + out.x * off, z: -(p.y + out.y * off), yaw: Math.atan2(-out.x, out.y) });
+  }
+  for (let u = 6; u < RING_PATH.length; u += 17) {
+    const p = ringPoseAt(u);
+    const out = { x: -Math.sin(p.heading), y: Math.cos(p.heading) };
+    const off = RING_WALL_OFFSET + 5 + (Math.floor(u / 17) % 2) * 4;
+    trees.push({ x: p.x + out.x * off, z: -(p.y + out.y * off), scale: rng.range(0.9, 1.4), kind: rng.chance(0.4) ? 'pine' : 'round' });
+  }
 
   return { solid: merge(c.solid), glass: merge(c.glass), trees, lamps, stats: c.stats };
 }

@@ -110,11 +110,42 @@ describe('loop extras', () => {
   });
 });
 
+describe('interpolation of persistent vehicles', () => {
+  const main = NETWORK.route('S', 'straight'); // leaves along the N arm, where connectors from N begin
+  const conn = NETWORK.connector('N', 'E');
+  const o = (route: typeof main, s: number, extra: Partial<VehicleObservation> = {}): VehicleObservation => ({
+    id: 1, routeIndex: route.index, approach: route.approach, movement: 'straight', s, speed: 8, distanceToStopLine: route.stopLineS - s, held: false, leg: 0, persistent: true, ...extra,
+  });
+  const at = (prev: VehicleObservation, curr: VehicleObservation, alpha = 1) => interpolateVehicles([prev], [curr], alpha, 4.5)[0];
+
+  it('never shrinks a persistent vehicle at the end of its arm, and only grows in on the first leg', () => {
+    expect(at(o(main, main.length - 3), o(main, main.length - 2.5)).fade).toBe(1);
+    expect(at(o(main, 0), o(main, 0.5), 1).fade).toBeLessThan(0.05);
+    expect(at(o(main, 0, { leg: 2 }), o(main, 0.5, { leg: 2 }), 1).fade).toBe(1);
+    // an arrivals-mode vehicle still shrinks away
+    expect(at(o(main, main.length - 3, { persistent: false }), o(main, main.length - 2.5, { persistent: false })).fade).toBeLessThan(0.5);
+  });
+  it('blends smoothly when a vehicle is handed from one route to the next', () => {
+    const a = at(o(main, main.length - 0.2), o(conn, 0.3), 0);
+    const b = at(o(main, main.length - 0.2), o(conn, 0.3), 1);
+    const mid = at(o(main, main.length - 0.2), o(conn, 0.3), 0.5);
+    expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeLessThan(1.5);
+    expect(mid.x).toBeCloseTo((a.x + b.x) / 2, 6);
+    expect(mid.y).toBeCloseTo((a.y + b.y) / 2, 6);
+  });
+  it('flashes right on the way to and round the ring, but not in arrivals mode', () => {
+    expect(at(o(main, main.length - 10), o(main, main.length - 9.5)).indicator).toBe('right');
+    expect(at(o(main, main.length - 10, { persistent: false }), o(main, main.length - 9.5, { persistent: false })).indicator).toBe(null);
+    expect(at(o(conn, 3), o(conn, 3.5)).indicator).toBe('right');
+    expect(at(o(conn, 100), o(conn, 100.5)).indicator).toBe(null);
+  });
+});
+
 describe('interpolation extras', () => {
   const left = NETWORK.route('N', 'left');
   const straight = NETWORK.route('N', 'straight');
   const o = (route: typeof left, s: number, speed: number): VehicleObservation => ({
-    id: 1, routeIndex: route.index, approach: 'N', movement: route.movement, s, speed, distanceToStopLine: route.stopLineS - s, held: false,
+    id: 1, routeIndex: route.index, approach: 'N', movement: route.movement, s, speed, distanceToStopLine: route.stopLineS - s, held: false, leg: 0, persistent: false,
   });
   const at = (prev: VehicleObservation, curr: VehicleObservation) => interpolateVehicles([prev], [curr], 1, 4.5)[0];
 
@@ -144,7 +175,7 @@ describe('interpolation extras', () => {
 describe('interpolation', () => {
   const route = NETWORK.route('N', 'straight');
   const ob = (id: number, s: number, routeIndex = route.index): VehicleObservation => ({
-    id, routeIndex, approach: 'N', movement: 'straight', s, speed: 5, distanceToStopLine: route.stopLineS - s, held: false,
+    id, routeIndex, approach: 'N', movement: 'straight', s, speed: 5, distanceToStopLine: route.stopLineS - s, held: false, leg: 0, persistent: false,
   });
   it('blends between the previous and current step', () => {
     const prev = [ob(1, 10)];

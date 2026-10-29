@@ -11,7 +11,7 @@ const cfg = (o = {}) => createDetectorConfig({ zoneLength: 80, observationWindow
 
 let nextId = 1;
 const obs = (approach: Approach, distanceToStopLine: number, speed: number, id = nextId++): VehicleObservation => ({
-  id, routeIndex: 0, approach, movement: 'straight', s: 94 - distanceToStopLine, speed, distanceToStopLine, held: false,
+  id, routeIndex: 0, approach, movement: 'straight', s: 94 - distanceToStopLine, speed, distanceToStopLine, held: false, leg: 0, persistent: false,
 });
 
 describe('detector config', () => {

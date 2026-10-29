@@ -7,10 +7,10 @@ import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 export type CameraPresetName = 'overview' | 'closeup' | 'street' | 'top';
 
 export const CAMERA_PRESETS: Record<CameraPresetName, { label: string; position: [number, number, number] }> = {
-  overview: { label: 'Overview', position: [26, 112, 52] },
+  overview: { label: 'Overview', position: [60, 245, 135] },
   closeup: { label: 'Intersection', position: [4, 16, 32] },
   street: { label: 'Street', position: [-1.8, 2.5, 36] },
-  top: { label: 'Top-down', position: [0, 125, 0.01] },
+  top: { label: 'Top-down', position: [0, 330, 0.01] },
 };
 
 export interface CameraRequest {
@@ -48,7 +48,7 @@ export function CameraRig({ request }: { request: CameraRequest }) {
       enableDamping
       dampingFactor={0.12}
       minDistance={12}
-      maxDistance={220}
+      maxDistance={560}
       maxPolarAngle={Math.PI / 2 - 0.05}
       onStart={() => {
         animating.current = false;

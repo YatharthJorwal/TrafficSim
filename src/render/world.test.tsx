@@ -52,7 +52,7 @@ describe('3D world (headless scene-graph test)', () => {
   it('builds the expected scene objects', async () => {
     const r = await ReactThreeTestRenderer.create(<World loop={makeLoop()} {...opts} />);
     const scene = sceneOf(r);
-    for (const n of ['environment', 'terrain', 'roads', 'crosswalks', 'city-solid', 'city-glass', 'lamps', 'trees', 'clouds', 'vehicles', 'signals', 'ped-signals', 'pedestrians', 'detectors']) find(scene, n);
+    for (const n of ['environment', 'terrain', 'roads', 'crosswalks', 'ring-road', 'ring-asphalt', 'ring-lines', 'ring-arrows', 'ring-wall', 'city-solid', 'city-glass', 'lamps', 'trees', 'clouds', 'vehicles', 'signals', 'ped-signals', 'pedestrians', 'detectors']) find(scene, n);
     for (const a of APPROACHES) for (const n of ['signal', 'stopline', 'detector']) find(scene, `${n}-${a}`);
     await r.unmount();
   });

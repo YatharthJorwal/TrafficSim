@@ -1,10 +1,9 @@
 import * as THREE from 'three';
-import { ROAD_LENGTH } from '../../ambient/layout';
 import { makeRng } from './rand';
 import type { TreeSpot } from './city';
 
 /** Terrain is dead flat out to this radius so roads, blocks and arms never touch a hill. */
-export const FLAT_RADIUS = ROAD_LENGTH + 30;
+export const FLAT_RADIUS = 175;
 const SIZE = 760;
 const SEGMENTS = 120;
 
@@ -83,8 +82,7 @@ export function scatterOutskirtTrees(count = 360, seed = 31): TreeSpot[] {
     const r = rng.range(40, 330);
     const x = Math.cos(ang) * r;
     const z = Math.sin(ang) * r;
-    if (Math.abs(x) < 56 && Math.abs(z) < 56) continue; // the city
-    if (r < FLAT_RADIUS && (Math.abs(x) < 14 || Math.abs(z) < 14)) continue; // roads and verges
+    if (Math.max(Math.abs(x), Math.abs(z)) < 128) continue; // the city, its ring road and the wall
     if (terrainHeight(x, z) > 38) continue;
     out.push({ x, z, scale: rng.range(0.8, 1.7), kind: rng.chance(0.45) ? 'pine' : 'round' });
   }

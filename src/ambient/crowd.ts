@@ -127,6 +127,7 @@ export function carBlocksCrossing(arm: Approach, vehicles: readonly VehicleObser
   const crossTime = CROSS_LENGTH / crossSpeed + CAR_MARGIN;
   for (const v of vehicles) {
     const route = NETWORK.routes[v.routeIndex];
+    if (route.kind !== 'main') continue; // ring traffic is nowhere near a crosswalk
     let ahead: number;
     if (route.exit === arm) {
       // leaving along this arm: the crosswalk lies just beyond the box exit

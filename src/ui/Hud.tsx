@@ -6,6 +6,8 @@ import { APPROACHES, type Approach, type SignalColor } from '../sim/types';
 const NAMES: Record<Approach, string> = { N: 'North', E: 'East', S: 'South', W: 'West' };
 
 interface HudData {
+  circulating: boolean;
+  fleet: number;
   time: number;
   onRoad: number;
   generated: number;
@@ -28,6 +30,8 @@ function read(loop: FixedStepLoop): HudData {
   const snap = r.machine.status;
   const overridden = r.snapshot().overridden;
   return {
+    circulating: e.isCirculating,
+    fleet: e.fleetSize,
     time: e.time,
     onRoad: e.vehiclesOnNetwork,
     generated: s.generated,
@@ -62,9 +66,19 @@ export function Hud({ loop }: { loop: FixedStepLoop }) {
         <div className="kv">
           <span>Clock</span><b>{`${Math.floor(d.time / 60)}:${String(Math.floor(d.time % 60)).padStart(2, '0')}`}</b>
           <span>Vehicles on road</span><b>{d.onRoad}</b>
-          <span>Generated</span><b>{d.generated}</b>
-          <span>Entered intersection</span><b>{d.entered}</b>
-          <span>Exited network</span><b>{d.exited}</b>
+          {d.circulating ? (
+            <>
+              <span>Fleet (vehicles)</span><b>{d.fleet}</b>
+              <span>Junction crossings</span><b>{d.entered}</b>
+              <span>Arm exits (legs completed)</span><b>{d.exited}</b>
+            </>
+          ) : (
+            <>
+              <span>Generated</span><b>{d.generated}</b>
+              <span>Entered intersection</span><b>{d.entered}</b>
+              <span>Exited network</span><b>{d.exited}</b>
+            </>
+          )}
         </div>
       </section>
 

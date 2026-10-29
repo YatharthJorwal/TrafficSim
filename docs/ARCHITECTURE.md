@@ -44,6 +44,22 @@
 5. `machine.step(dt)` (may start a transition)
 `setDebugOverride` bypasses 1 and 4 for inspection only and is flagged in snapshots.
 
+## Traffic modes and the ring road (`src/sim`)
+- `arrivals`: open boundary. Arrivals come from the seeded Poisson schedule and vehicles are removed at the arm ends. **Experiments use this.**
+- `circulating`: a fixed fleet (`config.fleet`, 1-48) spawns round robin at the four arm entries (2.5 s apart per entry). After leaving
+  through an arm a vehicle drives a *connector* (exit slip road -> clockwise ring -> entry slip road) and starts a new leg on the
+  arm it reaches. `completed` gets one record per leg; `exited` counts arm exits; `inserted` counts spawns (the fleet).
+- Geometry: ring lane 106 m from the centre, corner radius 20 m, junction radius 6 m, all right turns. 12 main routes (indices 0-11) then
+  16 connectors `C-<exit arm>-<target arm>` that share the ring path, so a vehicle can switch target without jumping.
+- Following: lane leaders on the arm, exit-lane groups by exit coordinate, and a cyclic ring order by ring coordinate. Vehicles on an exit
+  arc count as ring members for their last 6.5 m, and on an entry arc for their first 8 m.
+- Safety rules added for the closed network: merge gap acceptance (compares earliest/latest arrival of the merging vehicle with each ring
+  vehicle and never merges right in front of one), don't enter the box when the exit lane has backed up into it, and ring traffic skips an
+  arm whose entry queue has spilled back to the ring.
+- Route choice per vehicle comes from a per-vehicle seeded stream, independent of timing, so every controller sees the same choices
+  (the skip rule uses a hash, not the stream, to keep that true).
+- `addVehicles(n)` (circulating only) appends vehicles at the current time; `reset()` returns to the base fleet.
+
 ## Detectors (`src/detectors`)
 - One zone per approach: from the stop line back `zoneLength` (default 80 m). Sampled once per step.
 - Observed (counted): `inZone`, `approaching`, `queueLength` (stopped chain from the stop line), `queueLengthM`,

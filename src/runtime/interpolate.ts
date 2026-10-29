@@ -38,20 +38,38 @@ export function interpolateVehicles(
   const before = new Map<number, VehicleObservation>();
   for (const p of prev) before.set(p.id, p);
   const a = Math.min(1, Math.max(0, alpha));
+  const half = vehicleLength / 2;
   return curr.map((v) => {
     const p = before.get(v.id);
-    const s0 = p && p.routeIndex === v.routeIndex ? p.s : v.s;
-    const s = s0 + (v.s - s0) * a;
     const route = NETWORK.routes[v.routeIndex];
-    const pose = poseAt(route, s - vehicleLength / 2);
+    let x: number;
+    let y: number;
+    let heading: number;
+    let s = v.s;
+    if (p && p.routeIndex === v.routeIndex) {
+      s = p.s + (v.s - p.s) * a;
+      ({ x, y, heading } = poseAt(route, s - half));
+    } else if (p) {
+      // Handed over to another route this step (arm -> ring -> arm): blend the two poses.
+      const from = poseAt(NETWORK.routes[p.routeIndex], p.s - half);
+      const to = poseAt(route, v.s - half);
+      x = from.x + (to.x - from.x) * a;
+      y = from.y + (to.y - from.y) * a;
+      heading = from.heading + Math.atan2(Math.sin(to.heading - from.heading), Math.cos(to.heading - from.heading)) * a;
+    } else {
+      ({ x, y, heading } = poseAt(route, v.s - half));
+    }
     const slowing = p !== undefined && p.routeIndex === v.routeIndex && v.speed < p.speed - 0.015;
-    const turning = v.movement !== 'straight' && s > route.stopLineS - 35 && s < route.boxExitS + 1;
+    const signal = route.signals.find((g) => s >= g.s0 && s <= g.s1 && (!g.ringOnly || v.persistent));
+    // Fresh vehicles grow in at their spawn point; vehicles only shrink away at the end if they really leave.
+    const fadeIn = v.leg === 0 ? smoothstep(s / FADE_DISTANCE) : 1;
+    const fadeOut = v.persistent ? 1 : smoothstep((route.length - s) / FADE_DISTANCE);
     return {
-      id: v.id, approach: v.approach, x: pose.x, y: pose.y, heading: pose.heading, speed: v.speed, held: v.held,
+      id: v.id, approach: v.approach, x, y, heading, speed: v.speed, held: v.held,
       movement: v.movement,
       braking: v.speed < 0.3 || slowing,
-      indicator: turning ? (v.movement as 'left' | 'right') : null,
-      fade: Math.min(smoothstep(s / FADE_DISTANCE), smoothstep((route.length - s) / FADE_DISTANCE)),
+      indicator: signal ? signal.side : null,
+      fade: Math.min(fadeIn, fadeOut),
     };
   });
 }
