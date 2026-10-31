@@ -65,4 +65,4 @@ docs/          SPEC, ARCHITECTURE, RULES, DECISIONS, HANDOFF, TODO, BUNDLES
   block its queue for a whole green when the opposing flow is saturated. This lowers capacity noticeably
   (about 1000 veh/h total with 20 % lefts under the test cycle). Demand profiles will be calibrated to it in milestone 5.
 - Rare dilemma-zone red entries (a vehicle that committed to a yellow but slowed for a turn) are counted, not hidden.
-- Vehicles are identical in size; there are no pedestrians, bikes or lane changes.
+- Vehicles are identical in size; there are no bikes or lane changes.
