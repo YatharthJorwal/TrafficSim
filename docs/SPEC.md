@@ -34,16 +34,16 @@ and reproducible experiments. Optional, isolated local-AI extension. Works with 
 | C3 | Adaptive rule-based: queue, approaching count, waiting time, min/max green, max wait, phase compatibility | M4 | done |
 | C4 | Safety enforced independently of any controller: no conflicting greens, no skipped clearance | M2 | done |
 | A1 | Optional local-AI recommender, outside the timestep, structured I/O, validated, timeout + fallback, logged, evaluated vs baseline | M8 | todo |
-| X1 | Same arrival schedule, route mix, duration and seed for both controllers | M1/M5 | engine done (arrivals mode), experiment runner todo. Circulating mode gives each vehicle the same route choices, but arrival timing is endogenous, so it is not used for experiments |
-| X2 | Metrics: vehicles cleared per simulated hour, mean waiting time, max queue length (+ throughput, avg queue, signal utilisation, time stopped) | M5 | todo |
-| X3 | Demand profiles: light, balanced, uneven directional, heavy; repeated runs | M5 | todo |
+| X1 | Same arrival schedule, route mix, duration and seed for both controllers | M1/M5 | done: the runner builds one schedule per (profile, seed) and checks every controller used it (checksum). Circulating mode gives each vehicle the same route choices, but arrival timing is endogenous, so it is not used for experiments |
+| X2 | Metrics: vehicles cleared per simulated hour, mean waiting time, max queue length (+ throughput, avg queue, signal utilisation, time stopped) | M5 | done (`src/experiments/metrics.ts`) |
+| X3 | Demand profiles: light, balanced, uneven directional, heavy (+ shifting); repeated runs | M5 | done |
 | X4 | Comparison dashboard with numbers and charts; unfavourable results reported honestly | M6 | todo |
 | U1 | Dashboard: 3D viewport, play/pause/reset/speed, controller select, demand per approach, live signals, per-road counters, clock, metric cards, comparison charts, reproducibility info, CSV/JSON export | M3-M6 | partial (viewport, controls, signals, counters, clock done; rest M6) |
-| T1 | Tests for signal transitions, collision avoidance, red-light stopping, vehicle counting, metric calculations | M1-M5 | partial (all but metrics; detectors and 3D scene graph also tested) |
+| T1 | Tests for signal transitions, collision avoidance, red-light stopping, vehicle counting, metric calculations | M1-M5 | done (metrics tested with hand-computed cases; detectors and 3D scene graph also tested) |
 | T2 | Invalid configuration and reset handled predictably | M1/M2 | done |
 | T3 | Documented assumptions and known limitations | ongoing | ongoing |
 
-## Metric definitions (proposed; confirm at M5)
+## Metric definitions (implemented in M5; owner to confirm)
 Window: `[0, T]` where T = `config.duration`. No drain period; unserved vehicles are reported, not hidden.
 - **Generated**: scheduled arrivals with time <= t. **Inserted**: placed on the road (generated minus entry backlog).
   **Entered intersection**: front bumper crossed the stop line. **Exited**: reached the end of the exit arm.

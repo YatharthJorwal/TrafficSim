@@ -5,7 +5,7 @@
  ui  ->  render  ->  runtime  ->  control  ->  detectors  ->  sim
                         |                                 ^
                         +---------------------------------+
- analytics (M5) reads runtime / detectors / sim output only
+ experiments (M5) drives runtime and reads detectors / sim output; nothing imports it except scripts and tests
 ```
 - `src/sim`      pure TS traffic engine. Imports nothing from other layers.
 - `src/detectors` virtual detector zones. Reads `VehicleObservation`s; never touches the engine. Defines `Measurements`.
@@ -13,7 +13,7 @@
 - `src/runtime`  `SimulationRunner` (the only place engine, detectors, machine and controller meet), `FixedStepLoop`, `interpolateVehicles`.
 - `src/ambient`  cosmetic life (pedestrians) and the shared street layout constants. Reads `sim`; nothing else imports it except `render`.
 - `src/render`   R3F scene (reads the loop; never writes simulation state). `scenery/` and `models/` are pure geometry generators.  `src/ui` toolbar and live panel.
-- `src/analytics` (M5) metrics, experiment runner, export.
+- `src/experiments` (M5) metrics, demand profiles, baselines, paired experiment runner, statistics, Markdown/CSV reports. Pure TypeScript.
 - Nothing below `ui` may import React or Three.js.
 
 ## Simulation engine (`src/sim`)
@@ -106,6 +106,18 @@
   yield in the simulation). The crowd is stepped by `FixedStepLoop.onStep`, so it follows simulation time, pause and speed.
 - Debug hooks: `window.__trafficSim` (the loop) and `window.__r3f` (R3F store) exist for tooling; nothing in the app reads them.
 
+## Experiments (`src/experiments`, M5)
+- `profiles.ts`: demand profiles as segments (`startFraction`, rates). `buildSchedule(profile, seed, duration)` is a pure function of its inputs;
+  a one-segment profile equals `generateSchedule` exactly, later segments use their own derived seeds. `scheduleChecksum` fingerprints a schedule.
+- `metrics.ts`: `computeVehicleMetrics(ledger, T)` (SPEC definitions, all generated vehicles) and `RunRecorder` (per-tick queue and green utilisation).
+  The engine's read-only `ledger()` returns one entry per generated vehicle: exited, on the road, or still in the entry backlog.
+- `controllers.ts` / `tuning.ts`: controller specs. Baselines: default 60 s plan, Webster plan (`websterPlan`, saturation flow measured with
+  `npm run experiment -- --calibrate`), and `searchedFixed` (grid + Webster + default as candidates, refined locally, chosen on tuning seeds 9001+ that
+  evaluation never uses). Adaptive variants for the sensitivity sweep.
+- `experiment.ts`: `runOne` (the runner's tick loop plus the recorder), `runExperiment` (schedule built once per profile and seed, shared by all controllers),
+  `aggregate`, `pairedComparison`, `verdict` (better/worse only if the 95 % CI of the paired difference excludes 0).
+- `report.ts`: Markdown report, sensitivity report, CSV. `scripts/experiment.ts` is the CLI. Results live in `docs/RESULTS.md` and `docs/results/runs.csv`.
+- Experiments never use `setDebugOverride` and never touch the engine's internals; they only call the public runner and read the ledger.
+
 ## Planned
-- Experiments (M5): paired runs sharing one schedule, metrics from `completed` + stats + detector totals, CSV/JSON export.
 - AI (M8): adapter outside the tick; recommendation -> validate against machine rules -> apply as a normal request, with timeout and fallback.

@@ -1,13 +1,14 @@
 # Handoff
 
-Last updated: end of milestone 4 (adaptive controller + left-turn pockets), after M3.2 (ring road, persistent vehicles).
+Last updated: end of milestone 5 (experiments and metrics), plus GitHub Pages preparation. Before that: M4 (adaptive controller, left-turn pockets), M3.2 (ring road).
 
 ## State
-- M1 engine core and M2 signal control: done and pushed. M3 detectors + 3D scene: done in this bundle.
-- 160 tests pass. `npm run typecheck` and `npm run build` pass.
-- `npm run dev` opens the 3D app: toolbar (play/pause/reset/speed, signal mode, cycle, demand, seed, detector toggle),
-  3D viewport with Overview / Intersection / Top-down camera buttons, and a live side panel (clock, counters, signal
-  state, detector measurements split into Observed / Estimated, safety counters).
+- M1-M5 done. 218 tests pass (160 before M5, 58 new). `npm run typecheck` and `npm run build` pass.
+- `npm run dev` opens the 3D app (controller selector, demand, seed, circulating or arrivals mode, live detector panel).
+- `npm run experiment` runs the paired experiment; results are in `docs/RESULTS.md`, `docs/SENSITIVITY.md` and `docs/results/runs.csv`.
+- GitHub Pages is prepared but NOT live: `.github/workflows/deploy.yml` and a relative Vite base exist locally. The owner still has to push to `main`
+  and set Settings -> Pages -> Source: GitHub Actions. Expected link: https://yatharthjorwal.github.io/TrafficSim/ (unverified until it is deployed).
+  This session could only read the repository, so nothing was pushed or committed.
 - Headless: `npm run sim:headless -- 1 300 1800 60`.
 
 ## Visual verification
@@ -43,44 +44,61 @@ Owner review is still the final word: report anything that looks off (colours, s
 - `tools/apply-bundle.mjs`  applies bundles (`npm run apply -- <zip>`).
 
 ## Decisions waiting on the owner
-- None blocking. M5 will need confirmation of the metric definitions in docs/SPEC.md.
+- Confirm the metric definitions in docs/SPEC.md as implemented (especially mean wait over all generated vehicles and "unserved at end" with no drain period).
+- Push to `main` and enable Pages (see State) to get the live link; then check the 3D scene in a real browser.
+- Whether M6 should run experiments inside the browser (needs a Web Worker, about 8 minutes for the full set today) or only display results produced by `npm run experiment`.
 
-## Where the adaptive controller stands (honest preview, `npm run sim:compare -- 1800 4`, identical schedules, means over 4 seeds)
-| profile | controller | cleared/h | unserved | mean wait (exited) | worst wait |
-|---|---|---|---|---|---|
-| light (120/approach) | fixed 60 s | 441 | 5 | 7.6 s | 33 s |
-| | adaptive | 443 | 4 | 3.5 s | 21 s |
-| balanced (250) | fixed | 960 | 20 | 21.2 s | 118 s |
-| | adaptive | 962 | 19 | 20.6 s | 113 s |
-| uneven (N/S 450, E/W 100) | fixed 50/50 | 782 | 132 | 62.3 s | 185 s |
-| | fixed, split tuned to demand | 995 | 26 | 22.8 s | 193 s |
-| | adaptive | 970 | 38 | 27.7 s | 104 s |
-| heavy (400) | fixed | 1077 | 248 | 91.6 s | 218 s |
-| | adaptive | 1076 | 249 | 90.0 s | 180 s |
-Reading: adaptive clearly beats a *mismatched* fixed plan and halves the wait when traffic is light, ties at balanced and heavy demand, and is slightly
-**behind** a fixed plan tuned to the exact steady demand (but with a far better worst-case wait). That is the expected result: with steady, known demand a
-tuned fixed plan is hard to beat. Caveats: "mean wait" here is over vehicles that exited only (survivor bias; M5 fixes this), 4 seeds, no parameter tuning yet.
-The case where adaptive should win outright is demand that changes over time; M5 should include such a profile.
+## Things to know about M5 (experiments and metrics)
+- Everything lives in `src/experiments` (see ARCHITECTURE). Metrics follow SPEC exactly; **mean wait is over all generated vehicles**, including the
+  entry backlog and vehicles still queued at the end. The old exited-only mean (the M4 preview) is kept in the report but labelled survivor-biased: on
+  Uneven it said 62 s where the honest number for the same plan is 229 s.
+- Experiments use `arrivals` mode only, build one schedule per (profile, seed), and check every controller saw it (checksum). Evaluation seeds are 1..n.
+- Three fixed baselines, because a weak baseline flatters adaptive: the default 60 s plan, a Webster plan, and the best plan found by a search on separate tuning
+  seeds (9001, 9002). The first Webster version was weak (60/50 s greens for 450 vs 100 veh/h) and made adaptive look about 200 veh/h better than it is on Uneven;
+  that was found by comparing against the M4 preview and fixed (D40, D41).
+- Verdicts are mechanical: "better" or "worse" only when the 95 % CI of the paired difference excludes zero (8 seeds).
+- The adaptive defaults were not changed because of any result.
+
+## Where the adaptive controller stands (`docs/RESULTS.md`: 8 seeds, 1800 s, identical schedules, mean wait over all generated vehicles)
+| profile | default 60 s fixed | best fixed (searched) | adaptive | adaptive vs best fixed |
+|---|---|---|---|---|
+| light (480 veh/h) | 8.3 s | 4.8 s | 3.8 s | better on mean and longest wait, same throughput |
+| balanced (1000) | 24.6 s | 19.6 s | 20.3 s | no clear difference |
+| uneven (1100, N/S heavy) | 229 s | 43 s | 50 s | **no better; clears about 15 veh/h fewer (worse, 7 of 8 seeds)** |
+| heavy (1600) | 253 s | 245 s | 251 s | no clear difference |
+| shifting (1100, road changes at half time) | 170 s | 126 s | 57 s | **clearly better: -69 s mean wait, +154 veh/h, 8 of 8 seeds** |
+Reading: adaptive clearly beats a mismatched fixed plan and wins outright when demand changes during the run. It does not beat a fixed plan that is tuned to
+steady demand (Uneven: slightly behind), and it ties at balanced and heavy load. In light traffic it halves the wait. That is the expected shape. The one
+profile built to favour adaptivity (shifting) is where it wins; do not describe it as better "in general".
+Sensitivity (`docs/SENSITIVITY.md`, 4 seeds): most parameter changes make no clear difference. Longer minimum greens (20 s) hurt on Light, Uneven and Shifting.
+maxWait 45 helped on Heavy. Nothing was retuned.
+Safety: red entries, guard hits and overlaps were 0 in all 160 runs. The max-green watchdog fired in 17 of 40 adaptive runs (it ends a green the adaptive
+controller deliberately rested while nobody else was waiting); fixed plans never reached it.
 
 ## Known issues / limitations
 - Left turns use pockets (option A). Opposing left-turners are mutually exclusive (their paths cross in this compact box), so at an extreme 100 % lefts
   capacity is about 20 % lower than before; at the default 20 % lefts it is 8-9 % higher. Capacity is about 1000-1100 veh/h total.
 - Rare dilemma-zone red entries are counted in `redLightEntries` (about 1 in 100 stress runs; 0 in all tests).
-- Detector zone is 80 m by default. A queue longer than the zone is under-counted and flagged (`zoneOverflow`, shown as "≥").
+- Detector zone is 80 m by default. A queue longer than the zone is under-counted and flagged (`zoneOverflow`, shown as "≥"). In overloaded profiles the max queue is
+  capped at about 13 vehicles for every controller, so use mean queue and waits there.
+- The searched baseline is chosen on two tuning seeds, so its choice is somewhat noisy; Webster and the searched plan coincided on Light and Uneven.
+- Profiles are calibrated to a capacity of about 1000-1100 veh/h measured under the default plan; adaptive capacity differs slightly.
 - Vehicles scale in and out over 12 m at the arm ends; there are no entry/exit portals.
 - The engine runs on the main thread (about 1800x real time headless). A Web Worker is deferred until it is needed.
 - Scenery is procedural low-poly (generated in code). A Blender/GLB pipeline is optional and not started.
 
-## Next steps (M5: experiments and metrics)
-1. Confirm the metric definitions in docs/SPEC.md (cleared/hour, mean wait over *all* generated vehicles including backlog, max queue, utilisation).
-2. Experiment runner: paired runs on shared schedules, demand profiles (light, balanced, uneven, heavy, plus a shifting profile), several seeds, spread reporting.
-3. Baselines: default fixed plan and a demand-tuned fixed plan. Adaptive parameter sensitivity.
-4. Tests with hand-computed metric cases. Promote `scripts/compare.ts` into the framework and delete the preview.
+## Next steps (M6: dashboard)
+1. Per-approach demand controls and a controller comparison view that can show `docs/results/runs.csv` or run a short experiment in the browser.
+2. Metric cards and comparison charts (cleared/h, mean wait, queue, utilisation) with the spread, not only means.
+3. Reproducibility panel (seed, config, schedule checksum, versions) and CSV/JSON export (the runner already produces both).
+4. Time-series charts from detector data. If experiments move into the browser, run them in a Web Worker.
+Stop at the end of M6 for approval.
 
 ## How to verify a fresh checkout
 ```
 npm install
 npm test
 npm run typecheck
+npm run build
 npm run dev
 ```

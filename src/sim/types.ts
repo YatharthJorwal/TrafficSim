@@ -140,6 +140,24 @@ export interface VehicleRecord {
   ranRed: boolean;
 }
 
+/**
+ * One generated vehicle's waiting ledger at the current time (arrivals mode). Unlike `VehicleRecord` it also covers
+ * vehicles that have not finished, so a metric built from it cannot hide a queue by only counting the survivors.
+ */
+export interface VehicleLedgerEntry {
+  id: number;
+  approach: Approach;
+  movement: Movement;
+  generatedAt: number;
+  status: 'backlog' | 'onRoad' | 'exited';
+  /** Seconds between being generated and being placed on the road (so far, for a vehicle still in the backlog). */
+  backlogWait: number;
+  /** Seconds at speed < 0.5 m/s upstream of the stop line (same as `VehicleRecord.waitingTime`). */
+  queueWait: number;
+  /** Seconds at speed < 0.1 m/s anywhere on the road. Zero for a vehicle still in the backlog. */
+  stoppedTime: number;
+}
+
 export interface ApproachCounts {
   /** Arrivals whose scheduled time has passed (demand). */
   generated: number;

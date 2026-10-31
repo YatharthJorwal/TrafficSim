@@ -1,5 +1,20 @@
 # Changelog
 
+## M5 - experiments and metrics (and GitHub Pages preparation)
+- **`src/experiments`**: paired experiment framework. Demand profiles (light, balanced, uneven, heavy, plus **shifting**, where the dominant road changes at
+  half time), a schedule builder (constant profiles reproduce `generateSchedule` exactly), baselines, runner, statistics, Markdown/CSV reports.
+- **Metrics per SPEC:** cleared per hour, mean / 95th percentile / longest wait over **all generated vehicles** (entry backlog and unfinished vehicles included),
+  max and mean detector queue, per-phase green utilisation, time stopped. New read-only `engine.ledger()` supplies the per-vehicle waits; the old exited-only mean is
+  still reported, labelled survivor-biased.
+- **Baselines:** default 60 s plan, Webster plan (saturation flow measured in this simulator: `--calibrate`), and the best plan searched on separate tuning seeds.
+  An earlier Webster allocation starved the busy road (found by comparing with the M4 preview) and was corrected before any result was recorded.
+- **Statistics:** mean, sd, 95 % CI (Student t), paired differences per seed, better/tied/worse counts, and a verdict only when the interval excludes zero.
+- `npm run experiment` (options in `scripts/experiment.ts`), `--sensitivity` sweep of the adaptive parameters. `scripts/compare.ts` and `sim:compare` removed.
+- Results: `docs/RESULTS.md`, `docs/SENSITIVITY.md`, `docs/results/runs.csv`. Headline: adaptive wins clearly on shifting demand and in light traffic, ties at balanced and
+  heavy load, and does not beat a fixed plan tuned to steady uneven demand.
+- **GitHub Pages:** relative Vite base, `.github/workflows/deploy.yml` (test, build, deploy on push to `main`), README link. Needs the push and Settings -> Pages -> GitHub Actions.
+- Tests: 218 (58 new: hand-computed metric cases, schedules, Webster plans, tuning, paired runs, safety under every controller, saturation-flow guard).
+
 ## M4 - adaptive controller and left-turn pockets
 - **Left-turn pockets (option A):** a left-turner may pull 2.5 m into the box, clear of the oncoming through lane, and wait there for a gap. At the
   end of green the oncoming cars that can stop do so and the waiting left-turner clears the box ("sneakers"). One left-turner per oncoming pair
@@ -9,7 +24,7 @@
   (observed values only) and requests phases; the state machine stays the safety gate. Rules: max wait, no demand, max green, gap-out, pressure ratio.
   Greens last 12-50 s (12 s keeps the pedestrian crossing window intact). Every switch is logged with its reason and shown in the panel.
 - UI: Controller selector (Adaptive is the default), Cycle shown for fixed-time only.
-- `npm run sim:compare`: quick fixed vs adaptive preview on identical schedules (the full experiment framework is M5).
+- `npm run sim:compare`: quick fixed vs adaptive preview on identical schedules (replaced by `npm run experiment` in M5).
 - Tests: 160 (17 new adaptive tests: rule by rule on synthetic measurements, plus limits, safety, fairness, determinism, circulating mode).
 
 ## M3.2 - ring road and persistent vehicles

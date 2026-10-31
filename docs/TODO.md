@@ -48,17 +48,25 @@
 - [x] Phase-compatibility and request validation tests (hostile controllers, unknown phases, config vs safety timing)
 - [x] Tests: no starvation, max-wait respected, never unsafe, deterministic, safe in circulating mode
 - [x] Controller selector in the UI, decision reasons in the panel
-- [x] Quick fixed vs adaptive preview (`npm run sim:compare`)
+- [x] Quick fixed vs adaptive preview (replaced by `npm run experiment` in M5)
 - [ ] Owner review
 
-## M5 - Experiments and metrics
-- [ ] Metric calculators per SPEC (cleared/hour, mean wait, max queue, utilisation, time stopped)
-- [ ] Demand profiles (light, balanced, uneven, heavy) calibrated to real capacity (about 1000-1100 veh/h total with 20 % lefts)
-- [ ] Add a shifting-demand profile (the mix changes mid-run): that is where an adaptive controller should beat even a tuned fixed plan
-- [ ] Baselines: default 60 s fixed plan AND a demand-tuned fixed plan (Webster-style) per profile
-- [ ] Sensitivity of adaptive parameters (min/max green, switch ratio, max wait), reported without tuning the baseline
-- [ ] Paired runs on shared schedules, multiple seeds, spread reporting
-- [ ] Metric tests with hand-computed cases
+## Hosting - GitHub Pages (prepared, needs the push and one setting)
+- [x] Relative `base` in `vite.config.ts` so the build works under `/<repo>/`
+- [x] `.github/workflows/deploy.yml`: test, build and deploy `dist/` on every push to `main`
+- [x] README link to the live demo
+- [ ] Push to `main` and set Settings -> Pages -> Source: GitHub Actions (owner)
+- [ ] Open the live link and check the 3D scene loads (owner; WebGL cannot be checked in the build sandbox)
+
+## M5 - Experiments and metrics (done)
+- [x] Metric calculators per SPEC (cleared/hour, mean wait over ALL generated vehicles incl. backlog, max and mean queue, utilisation, time stopped)
+- [x] Engine `ledger()` so unfinished vehicles and the entry backlog are counted, not hidden
+- [x] Demand profiles: light, balanced, uneven, heavy, plus shifting (the dominant road changes mid-run)
+- [x] Baselines: default 60 s fixed plan, Webster-tuned fixed plan, and the best plan searched on separate tuning seeds
+- [x] Sensitivity of adaptive parameters, one at a time (`--sensitivity`), reported without changing the defaults
+- [x] Paired runs on shared schedules, several seeds, spread (sd, 95 % CI) and a mechanical verdict
+- [x] Metric tests with hand-computed cases; markdown / CSV export; preview script removed
+- [ ] Owner review of the metric definitions and of `docs/RESULTS.md`
 
 ## M6 - Dashboard
 - [ ] Per-approach demand controls, metric cards, comparison charts

@@ -2,18 +2,22 @@
 
 Browser-based simulation of one four-way intersection comparing fixed-time and adaptive signal control.
 
-**Status: milestone 4 of 8 done (plus polish) - engine, signal control, virtual detectors and a live low-poly 3D city with a ring road and a persistent, circulating fleet.**
-The adaptive controller, experiments, comparison dashboard, Blender assets and AI extension come in later milestones.
-Start with `CLAUDE.md` and `docs/HANDOFF.md`; the plan is in `docs/TODO.md`.
+**Status: milestone 5 of 8 done (plus polish) - engine, signal control, virtual detectors, a live low-poly 3D city with a ring road, the adaptive controller, and a paired experiment framework with metrics.**
+The comparison dashboard, Blender assets and AI extension come in later milestones.
+Start with `CLAUDE.md` and `docs/HANDOFF.md`; the plan is in `docs/TODO.md`. Latest experiment results: `docs/RESULTS.md`.
+
+**Live demo (GitHub Pages):** https://yatharthjorwal.github.io/TrafficSim/ - published by `.github/workflows/deploy.yml` on every push to `main`
+(one-time setup: repository Settings -> Pages -> Source: GitHub Actions).
 
 ## Run
 
 ```bash
 npm install
-npm test               # 160 tests
+npm test               # unit and integration tests
 npm run sim:headless -- 1 300 1800 60   # seed, veh/h/approach, seconds, cycle seconds
-npm run sim:compare -- 1800 4           # quick fixed vs adaptive preview (seconds, seeds)
+npm run experiment -- --duration 1800 --seeds 8 --md docs/RESULTS.md   # paired fixed vs adaptive experiment (see scripts/experiment.ts for options)
 npm run dev            # 3D app with live detector panel
+npm run build          # production build into dist/ (what GitHub Pages serves)
 npm run apply -- <bundle.zip>   # apply a delivered bundle (see docs/BUNDLES.md)
 ```
 
@@ -31,7 +35,8 @@ src/runtime/   SimulationRunner, FixedStepLoop, interpolation
 src/ambient/   cosmetic pedestrians and shared street layout (reads the sim, never changes it)
 src/render/    React Three Fiber scene: scenery/ (city, terrain generators), models/ (vehicles), components
 src/ui/        toolbar and live panel
-scripts/       headless runner
+src/experiments/ metrics, demand profiles, baselines, paired runs, statistics, reports (pure TypeScript, no React / Three.js)
+scripts/       headless runner, experiment runner
 tools/         apply-bundle.mjs
 docs/          SPEC, ARCHITECTURE, RULES, DECISIONS, HANDOFF, TODO, BUNDLES
 ```

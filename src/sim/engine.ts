@@ -14,6 +14,7 @@ import {
   type SignalStates,
   type SimConfig,
   type SimSnapshot,
+  type VehicleLedgerEntry,
   type VehicleObservation,
   type VehicleParams,
   type VehicleRecord,
@@ -226,6 +227,55 @@ export class SimulationEngine {
   /** Vehicles generated but not yet placed on the road because the entry was occupied. */
   backlogCount(approach: Approach): number {
     return this.backlog[approach].length;
+  }
+
+  /**
+   * Arrivals mode: one ledger entry per generated vehicle (exited, on the road, or still in the entry backlog),
+   * for experiment metrics. Read-only. Order: exited, on the road, backlog.
+   */
+  ledger(): VehicleLedgerEntry[] {
+    if (this.circulating) throw new Error('ledger() needs arrivals mode: circulating vehicles never finish');
+    const out: VehicleLedgerEntry[] = [];
+    for (const r of this._completed) {
+      out.push({
+        id: r.id,
+        approach: r.approach,
+        movement: r.movement,
+        generatedAt: r.generatedAt,
+        status: 'exited',
+        backlogWait: r.insertedAt - r.generatedAt,
+        queueWait: r.waitingTime,
+        stoppedTime: r.stoppedTime,
+      });
+    }
+    for (const v of this.vehicles) {
+      out.push({
+        id: v.id,
+        approach: v.route.approach,
+        movement: this.movementOf(v),
+        generatedAt: v.generatedAt,
+        status: 'onRoad',
+        backlogWait: v.insertedAt - v.generatedAt,
+        queueWait: v.waitingTime,
+        stoppedTime: v.stoppedTime,
+      });
+    }
+    const now = this.time;
+    for (const approach of APPROACHES) {
+      for (const arr of this.backlog[approach]) {
+        out.push({
+          id: arr.id,
+          approach,
+          movement: arr.movement,
+          generatedAt: arr.time,
+          status: 'backlog',
+          backlogWait: now - arr.time,
+          queueWait: 0,
+          stoppedTime: 0,
+        });
+      }
+    }
+    return out;
   }
 
   setSignals(states: SignalStates): void {

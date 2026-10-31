@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "sim:headless": "tsx scripts/headless.ts",
     "apply": "node tools/apply-bundle.mjs",
-    "sim:compare": "tsx scripts/compare.ts"
+    "experiment": "tsx scripts/experiment.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
