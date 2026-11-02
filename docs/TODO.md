@@ -68,10 +68,13 @@
 - [x] Metric tests with hand-computed cases; markdown / CSV export; preview script removed
 - [ ] Owner review of the metric definitions and of `docs/RESULTS.md`
 
-## M6 - Dashboard
-- [ ] Per-approach demand controls, metric cards, comparison charts
-- [ ] Reproducibility panel (seed, config hash, versions), CSV/JSON export
-- [ ] Time-series charts from detector data
+## M6 - Dashboard (done, awaiting owner review)
+- [x] Per-approach demand controls in the live view (N/E/S/W rates, presets incl. Shifting) in arrivals mode
+- [x] Compare tab: metric cards with paired verdicts, bar chart (mean, sd, per-seed dots), all-profiles table, published results and in-browser runs (Web Worker, cancel, import settings)
+- [x] Reproducibility panel (seeds, schedule fingerprints, controller settings, timing, app version), CSV and JSON export, settings export/import
+- [x] Time-series charts: queues over time per approach in the live panel, waiting vehicles and detector queue over time in browser runs
+- [x] Loading screen with real staged progress ("Preparing... n%")
+- [ ] Owner review: look at the Compare tab and the live "Queues over time" chart in a real browser, and the loading screen on a slow connection
 
 ## M7 - Blender assets and polish
 - [ ] Optional: Blender/GLB replacements for the procedural models (only if wanted)

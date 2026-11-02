@@ -3,6 +3,7 @@ import { createConfig, uniformDemand } from '../sim/config';
 import type { TrafficMode } from '../sim/types';
 import { ALL_GREEN, ALL_RED } from '../sim/debugSignals';
 import { FixedStepLoop, SimulationRunner } from '../runtime';
+import { buildSchedule, profileConfig, type DemandProfile } from '../experiments';
 
 export type SignalMode = 'controller' | 'green' | 'red';
 export type ControllerKind = 'fixed' | 'adaptive';
@@ -15,20 +16,26 @@ export interface SimSettings {
   mode: TrafficMode;
   /** Fleet size in circulating mode. */
   fleet: number;
-  /** Vehicles per hour on each approach in arrivals mode (same for all four in this view). */
+  /** Vehicles per hour on each approach in arrivals mode, the same for all four. Ignored when `profile` is given. */
   rate: number;
+  /** Arrivals mode: a demand profile (per-approach rates, optionally changing over time). Takes precedence over `rate`. */
+  profile?: DemandProfile;
   /** Fixed-time cycle length (s). */
   cycle: number;
 }
 
+/** Length of the arrival schedule in the live view (s). */
+export const LIVE_HORIZON = 3600;
+
 export function makeLoop(s: SimSettings): FixedStepLoop {
-  const config = createConfig({ seed: s.seed, duration: 3600, mode: s.mode, fleet: s.fleet });
-  if (s.mode === 'arrivals') config.demand = uniformDemand(s.rate);
+  const useProfile = s.mode === 'arrivals' && s.profile !== undefined;
+  const config = useProfile ? { ...profileConfig(s.profile!, s.seed, LIVE_HORIZON), mode: s.mode, fleet: s.fleet } : createConfig({ seed: s.seed, duration: LIVE_HORIZON, mode: s.mode, fleet: s.fleet });
+  if (s.mode === 'arrivals' && !useProfile) config.demand = uniformDemand(s.rate);
   const controller: SignalController =
     s.controller === 'adaptive'
       ? new AdaptiveController(TWO_PHASE_PLAN, DEFAULT_TIMING)
       : new FixedTimeController(TWO_PHASE_PLAN, DEFAULT_TIMING, planFromCycle(TWO_PHASE_PLAN, DEFAULT_TIMING, s.cycle));
-  const runner = new SimulationRunner(config, controller, { diagnostics: true });
+  const runner = new SimulationRunner(config, controller, { diagnostics: true, ...(useProfile ? { schedule: buildSchedule(s.profile!, s.seed, LIVE_HORIZON) } : {}) });
   return new FixedStepLoop(runner);
 }
 

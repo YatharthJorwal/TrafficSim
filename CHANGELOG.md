@@ -1,5 +1,19 @@
 # Changelog
 
+## M6 - dashboard and loading screen
+- **Loading screen:** plain-DOM splash in `index.html` shows "Preparing... n%" from the first byte. The percentage is stage-based (interface, 3D engine, city,
+  simulation, first frame drawn); it never goes backwards and shows 100 % only after the first frames are on screen. Between stage completions it creeps
+  slowly, so on a slow connection it moves but is an estimate, not a byte count. A load failure replaces it with a message and a Reload button.
+- **Code splitting:** the 3D engine and the dashboard are separate chunks; the dashboard downloads only when the Compare tab is opened. The scenery is built once and cached.
+- **Compare tab:** published results (`docs/results/runs.csv`, bundled) or a paired run in the browser (Web Worker, cancellable, limits: 2-30 min, up to 12 seeds, up to 1500 veh/h per approach).
+  Metric cards (mean wait, cleared per hour, longest wait, unserved) with the paired difference, 95 % CI verdict and better/tied/worse seed counts; bar chart with mean, sd and per-seed
+  dots; all-profiles table; waiting-vehicles and detector-queue time series with a min-max band across seeds (browser runs).
+- **Reproducibility and export:** seeds, schedule fingerprints, controller settings, timing and version; runs as CSV, full report as JSON, settings as JSON (re-importable).
+- **Live view:** per-approach demand inputs and presets in arrivals mode; "Queues over time" chart (last 5 simulated minutes, per approach, with green strips per road).
+- Hand-written SVG charts (no chart library): hover tooltips, a table view of every chart, thin marks, validated palette slots, status shown with icon and words.
+- `runOne` can sample a time series (queue, unserved) without affecting results. `runsToCsv` and the dashboard share one row format (`rows.ts`).
+- 278 tests (60 new): chart scale helpers, boot progress, history recorder, dashboard model, row/CSV round trip, profile-driven live loop.
+
 ## M5 - experiments and metrics (and GitHub Pages preparation)
 - **`src/experiments`**: paired experiment framework. Demand profiles (light, balanced, uneven, heavy, plus **shifting**, where the dominant road changes at
   half time), a schedule builder (constant profiles reproduce `generateSchedule` exactly), baselines, runner, statistics, Markdown/CSV reports.

@@ -6,6 +6,16 @@ import { RunRecorder, computeVehicleMetrics, type QueueMetrics, type VehicleMetr
 import { buildSchedule, profileConfig, scheduleChecksum, type DemandProfile } from './profiles';
 import { comparePaired, summarize, type PairedComparison, type Summary } from './stats';
 
+/** One point of a run's time series, sampled every `seriesInterval` simulated seconds. */
+export interface SeriesPoint {
+  /** Simulated time (s). */
+  t: number;
+  /** Total detector queue over the four approaches (vehicles). Capped by what the 80 m zones can hold. */
+  queue: number;
+  /** Generated minus exited: every vehicle that has arrived and not yet left, including the entry backlog. */
+  unserved: number;
+}
+
 export interface RunResult {
   profileId: string;
   controllerId: string;
@@ -18,6 +28,8 @@ export interface RunResult {
   safety: { redLightEntries: number; safetyClamps: number; overlapPairSteps: number; watchdogSwitches: number };
   /** Accepted phase-change requests (how often the signals switched). */
   signalSwitches: number;
+  /** Only present when `seriesInterval` was given. */
+  series?: SeriesPoint[];
 }
 
 export interface RunInput {
@@ -29,6 +41,8 @@ export interface RunInput {
   schedule?: readonly Arrival[];
   /** Per-step body-overlap checks. Slower; on for safety tests. */
   diagnostics?: boolean;
+  /** Record a time series every this many simulated seconds (0 or omitted: none). */
+  seriesInterval?: number;
 }
 
 /** One run: one profile, one controller, one seed, arrivals mode, the whole horizon [0, duration]. */
@@ -42,11 +56,22 @@ export function runOne(input: RunInput): RunResult {
   const dt = config.dt;
   const target = Math.round(duration / dt);
   const entered: Record<Approach, number> = { N: 0, E: 0, S: 0, W: 0 };
+  const everySteps = input.seriesInterval && input.seriesInterval > 0 ? Math.max(1, Math.round(input.seriesInterval / dt)) : 0;
+  const series: SeriesPoint[] = [];
   while (runner.engine.steps < target) {
     runner.tick();
     for (const a of APPROACHES) entered[a] = runner.engine.stats.perApproach[a].enteredIntersection;
     // engine.signals still holds the colours the engine used for the step that just ran
     recorder.sample(dt, runner.engine.signals, runner.detectors.measurements, entered);
+    if (everySteps && runner.engine.steps % everySteps === 0) {
+      const m = runner.detectors.measurements;
+      const st = runner.engine.stats;
+      series.push({
+        t: runner.engine.time,
+        queue: APPROACHES.reduce((n, a) => n + m[a].observed.queueLength, 0),
+        unserved: st.generated - st.exited,
+      });
+    }
   }
 
   const s = runner.engine.stats;
@@ -65,6 +90,7 @@ export function runOne(input: RunInput): RunResult {
       watchdogSwitches: runner.machine.stats.watchdogSwitches,
     },
     signalSwitches: runner.machine.stats.acceptedRequests,
+    ...(everySteps ? { series } : {}),
   };
 }
 
@@ -74,6 +100,7 @@ export interface ExperimentOptions {
   seeds: readonly number[];
   duration: number;
   diagnostics?: boolean;
+  seriesInterval?: number;
   onRun?: (done: number, total: number, result: RunResult) => void;
 }
 
@@ -99,7 +126,7 @@ export function runExperiment(options: ExperimentOptions): ExperimentResults {
     for (const seed of seeds) {
       const schedule = buildSchedule(profile, seed, duration);
       for (const controller of controllers) {
-        const result = runOne({ profile, controller, seed, duration, schedule, diagnostics: options.diagnostics });
+        const result = runOne({ profile, controller, seed, duration, schedule, diagnostics: options.diagnostics, seriesInterval: options.seriesInterval });
         runs.push(result);
         options.onRun?.(runs.length, total, result);
       }

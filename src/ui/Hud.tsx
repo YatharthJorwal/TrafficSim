@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import type { Measurements } from '../detectors';
-import type { FixedStepLoop } from '../runtime';
+import { HistoryRecorder, type FixedStepLoop, type HistorySample } from '../runtime';
+import { LineChart } from './charts/LineChart';
+import { formatClock } from './charts/scale';
+import { APPROACH_COLOR } from './dashboard/model';
+import { greenSpans, queueSeries } from './historyChart';
 import { APPROACHES, type Approach, type SignalColor } from '../sim/types';
 
 const NAMES: Record<Approach, string> = { N: 'North', E: 'East', S: 'South', W: 'West' };
@@ -55,11 +59,22 @@ const f1 = (n: number) => n.toFixed(1);
 /** Live panel. Polls the loop a few times per second in its own state so the 3D scene never re-renders. */
 export function Hud({ loop }: { loop: FixedStepLoop }) {
   const [d, setD] = useState<HudData>(() => read(loop));
+  const [hist, setHist] = useState<readonly HistorySample[]>([]);
   useEffect(() => {
+    // The recorder is created inside the effect so React's strict-mode remount gets a live one.
+    const rec = new HistoryRecorder(loop);
     setD(read(loop));
-    const id = setInterval(() => setD(read(loop)), 250);
-    return () => clearInterval(id);
+    setHist([]);
+    const id = setInterval(() => {
+      setD(read(loop));
+      setHist(rec.samples.slice());
+    }, 250);
+    return () => {
+      clearInterval(id);
+      rec.dispose();
+    };
   }, [loop]);
+  const queues = queueSeries(hist);
 
   return (
     <div className="side">
@@ -126,6 +141,26 @@ export function Hud({ loop }: { loop: FixedStepLoop }) {
           </tbody>
         </table>
         <p className="muted small">≥ means the queue reached the end of the detector zone and is under-counted.</p>
+      </section>
+
+      <section>
+        <h3>Queues over time</h3>
+        <LineChart
+          title="Detector queue per approach"
+          yLabel="vehicles"
+          xLabel="Last 5 simulated minutes. Strips show which road has green."
+          xFormat={formatClock}
+          width={340}
+          height={120}
+          yDigits={0}
+          tableLimit={30}
+          series={(['N', 'E', 'S', 'W'] as const).map((a) => ({ id: a, label: a, color: APPROACH_COLOR[a], points: queues[a] }))}
+          strips={[
+            { label: 'N/S', spans: greenSpans(hist, 'NS') },
+            { label: 'E/W', spans: greenSpans(hist, 'EW') },
+          ]}
+          empty="Collecting data..."
+        />
       </section>
 
       <section>

@@ -2,7 +2,7 @@
 
 Browser-based simulation of one four-way intersection comparing fixed-time and adaptive signal control.
 
-**Status: milestone 5 of 8 done (plus polish) - engine, signal control, virtual detectors, a live low-poly 3D city with a ring road, the adaptive controller, and a paired experiment framework with metrics.**
+**Status: milestone 6 of 8 done (awaiting review) - engine, signal control, virtual detectors, a live low-poly 3D city with a ring road, the adaptive controller, a paired experiment framework with metrics, and a dashboard (Compare tab) with in-browser runs, charts and export.**
 The comparison dashboard, Blender assets and AI extension come in later milestones.
 Start with `CLAUDE.md` and `docs/HANDOFF.md`; the plan is in `docs/TODO.md`. Latest experiment results: `docs/RESULTS.md`.
 
@@ -34,7 +34,8 @@ src/control/   phases, SignalStateMachine, controllers (fixed-time and adaptive)
 src/runtime/   SimulationRunner, FixedStepLoop, interpolation
 src/ambient/   cosmetic pedestrians and shared street layout (reads the sim, never changes it)
 src/render/    React Three Fiber scene: scenery/ (city, terrain generators), models/ (vehicles), components
-src/ui/        toolbar and live panel
+src/ui/        toolbar, live panel, charts/ (SVG charts), dashboard/ (Compare tab)
+src/boot/      loading-screen progress
 src/experiments/ metrics, demand profiles, baselines, paired runs, statistics, reports (pure TypeScript, no React / Three.js)
 scripts/       headless runner, experiment runner
 tools/         apply-bundle.mjs

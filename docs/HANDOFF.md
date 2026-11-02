@@ -1,14 +1,14 @@
 # Handoff
 
-Last updated: end of milestone 5 (experiments and metrics), plus GitHub Pages preparation. Before that: M4 (adaptive controller, left-turn pockets), M3.2 (ring road).
+Last updated: end of milestone 6 (dashboard and loading screen). Before that: M5 (experiments and metrics, GitHub Pages preparation), M4 (adaptive controller), M3.2 (ring road).
 
 ## State
-- M1-M5 done. 218 tests pass (160 before M5, 58 new). `npm run typecheck` and `npm run build` pass.
-- `npm run dev` opens the 3D app (controller selector, demand, seed, circulating or arrivals mode, live detector panel).
+- M1-M6 done, M6 awaiting owner review. 278 tests pass (218 before M6, 60 new). `npm run typecheck` and `npm run build` pass.
+- `npm run dev` opens the app: **Live 3D** tab (controller, signals, traffic mode, per-approach demand N/E/S/W with presets, seed, live detector panel, "Queues over time" chart)
+  and **Compare** tab (published results or an in-browser paired run, cards, charts, reproducibility, export). A loading screen ("Preparing... n%") shows until the first frame is drawn.
 - `npm run experiment` runs the paired experiment; results are in `docs/RESULTS.md`, `docs/SENSITIVITY.md` and `docs/results/runs.csv`.
-- GitHub Pages is prepared but NOT live: `.github/workflows/deploy.yml` and a relative Vite base exist locally. The owner still has to push to `main`
-  and set Settings -> Pages -> Source: GitHub Actions. Expected link: https://yatharthjorwal.github.io/TrafficSim/ (unverified until it is deployed).
-  This session could only read the repository, so nothing was pushed or committed.
+- GitHub Pages: `.github/workflows/deploy.yml` and a relative Vite base are in `main` (pushed by the owner). Needs Settings -> Pages -> Source: GitHub Actions.
+  Expected link: https://yatharthjorwal.github.io/TrafficSim/ (this session has never seen it live, so it is unverified). This session cannot push; M6 is delivered as a bundle.
 - Headless: `npm run sim:headless -- 1 300 1800 60`.
 
 ## Visual verification
@@ -43,10 +43,18 @@ Owner review is still the final word: report anything that looks off (colours, s
 - `src/ui`         App (toolbar + layout), Hud (live panel), simFactory.
 - `tools/apply-bundle.mjs`  applies bundles (`npm run apply -- <zip>`).
 
+## What to check by eye (M6; not verifiable in the build sandbox, which has only software WebGL)
+- Loading screen on a slow connection (browser dev tools -> Network -> Slow 4G, hard reload): the percentage should move steadily, never go back, and reach 100 % only when the city appears.
+  Under a software renderer it ran 0 -> 100 % in about 4 s and was removed. It is stage-based with an in-stage estimate, not a byte count.
+- Compare tab layout on a phone width and in dark mode (checked here at desktop width, light mode only).
+- Live view: switch Traffic to "Arrivals", pick Demand "Shifting", run at 10x and watch the "Queues over time" chart. Changing demand restarts the simulation.
+- Frame rate of the 3D scene on a real GPU (unchanged since M3).
+
 ## Decisions waiting on the owner
 - Confirm the metric definitions in docs/SPEC.md as implemented (especially mean wait over all generated vehicles and "unserved at end" with no drain period).
 - Push to `main` and enable Pages (see State) to get the live link; then check the 3D scene in a real browser.
-- Whether M6 should run experiments inside the browser (needs a Web Worker, about 8 minutes for the full set today) or only display results produced by `npm run experiment`.
+- Resolved in M6: the Compare tab shows the published results and can also run a short paired experiment in the browser (D46). Say if you want the limits changed.
+- Approve M6, then M7 (optional Blender assets, entry/exit portals) or M8 (optional local AI) is next; both are optional.
 
 ## Things to know about M5 (experiments and metrics)
 - Everything lives in `src/experiments` (see ARCHITECTURE). Metrics follow SPEC exactly; **mean wait is over all generated vehicles**, including the

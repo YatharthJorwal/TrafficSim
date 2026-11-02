@@ -4,13 +4,12 @@ import { RingRoad } from './RingRoad';
 import { Roads } from './Roads';
 import { Terrain } from './Terrain';
 import { Trees } from './Trees';
-import { buildCity } from './scenery/city';
-import { scatterOutskirtTrees } from './scenery/terrain';
+import { getCity, getOutskirtTrees } from './scenery/cache';
 
 /** Static scenery: terrain, roads and markings, the city, street furniture and trees. Built once, deterministically. */
 export function Environment() {
-  const city = useMemo(() => buildCity(), []);
-  const trees = useMemo(() => [...city.trees, ...scatterOutskirtTrees()], [city]);
+  const city = getCity();
+  const trees = useMemo(() => [...city.trees, ...getOutskirtTrees()], [city]);
   return (
     <group name="environment">
       <Terrain />

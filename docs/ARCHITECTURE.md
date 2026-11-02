@@ -119,5 +119,14 @@
 - `report.ts`: Markdown report, sensitivity report, CSV. `scripts/experiment.ts` is the CLI. Results live in `docs/RESULTS.md` and `docs/results/runs.csv`.
 - Experiments never use `setDebugOverride` and never touch the engine's internals; they only call the public runner and read the ledger.
 
+## Dashboard and start-up (M6)
+- `src/experiments/rows.ts` is the flat run row (`RunRow`), its CSV, pairing and summaries. `browserRun.ts` validates settings (`LIMITS`) and runs a paired experiment;
+  `worker.ts` hosts it for the browser (messages: `run`, `progress`, `done`, `error`). `RunResult.series` is optional and sampled in `runOne` without affecting metrics.
+- `src/ui/dashboard/`: `Dashboard` (filters, source switch), `RunPanel` (form, import), `Cards`, `Overview`, `Repro`, `model.ts` (pure, tested), `useExperimentWorker`.
+  `src/ui/charts/`: `scale.ts` (pure helpers), `BarChart`, `LineChart`. `src/ui` may import `src/experiments`; the reverse is not allowed.
+- `src/runtime/history.ts`: `HistoryRecorder` listens to `FixedStepLoop.onStep`/`onReset` and keeps a rolling window of detector queues and signal phase for the live chart.
+- `App` lazy-loads `Viewport` and `Dashboard`. `src/boot/progress.ts` (pure) and `splash.ts` (DOM) drive the splash in `index.html` (`#boot`); `main.tsx` completes stages
+  `shell`, `ui`, `3d`, `city`; `App` completes `sim` and, through `Viewport`'s `onFirstFrame`, `frame`.
+
 ## Planned
 - AI (M8): adapter outside the tick; recommendation -> validate against machine rules -> apply as a normal request, with timeout and fallback.

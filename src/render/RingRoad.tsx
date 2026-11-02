@@ -1,10 +1,10 @@
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { buildRingRoad } from './scenery/ring';
+import { getRingRoad } from './scenery/cache';
 
 /** The square ring road around the city: asphalt, slip roads, edge lines, clockwise chevrons and a perimeter wall. */
 export function RingRoad() {
-  const parts = useMemo(buildRingRoad, []);
+  const parts = getRingRoad();
   const arrows = useRef<THREE.InstancedMesh>(null);
   const chevron = useMemo(() => {
     const shape = new THREE.Shape();

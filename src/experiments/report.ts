@@ -1,5 +1,6 @@
 import type { ControllerSpec } from './controllers';
-import { METRICS, aggregate, metricByKey, pairedComparison, verdict, type ExperimentResults } from './experiment';
+import { aggregate, metricByKey, pairedComparison, verdict, type ExperimentResults } from './experiment';
+import { rowFromResult, rowsToCsv } from './rows';
 import type { DemandProfile } from './profiles';
 import type { Summary } from './stats';
 
@@ -123,27 +124,7 @@ export function formatSensitivity(results: ExperimentResults, options: { profile
   return out.join('\n');
 }
 
-/** One row per run with every metric: for spreadsheets and the dashboard export. */
+/** One row per run with every metric: for spreadsheets and the dashboard export. Same format as `rowsToCsv`. */
 export function runsToCsv(results: ExperimentResults): string {
-  const head = ['profile', 'controller', 'seed', 'duration_s', 'schedule', ...METRICS.map((m) => m.key), 'generated', 'inserted', 'exited', 'on_road', 'backlog', 'red_entries', 'guard_hits', 'overlap_pair_steps', 'watchdog_switches'];
-  const rows = results.runs.map((r) =>
-    [
-      r.profileId,
-      r.controllerId,
-      r.seed,
-      r.duration,
-      r.scheduleChecksum,
-      ...METRICS.map((m) => Number(m.get(r).toFixed(4))),
-      r.vehicles.generated,
-      r.vehicles.inserted,
-      r.vehicles.exited,
-      r.vehicles.onRoad,
-      r.vehicles.backlog,
-      r.safety.redLightEntries,
-      r.safety.safetyClamps,
-      r.safety.overlapPairSteps,
-      r.safety.watchdogSwitches,
-    ].join(','),
-  );
-  return [head.join(','), ...rows].join('\n') + '\n';
+  return rowsToCsv(results.runs.map(rowFromResult));
 }

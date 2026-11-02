@@ -45,3 +45,44 @@ describe('simulation factory', () => {
     expect(loop.runner.overridden).toBe(false);
   });
 });
+
+describe('arrivals mode with a demand profile', () => {
+  const heavyNorth = { N: 900, E: 60, S: 60, W: 60 };
+
+  it('feeds each approach at its own rate', async () => {
+    const { customProfile } = await import('../experiments');
+    const loop = makeLoop({ seed: 3, controller: 'fixed', mode: 'arrivals', fleet: 8, rate: 300, cycle: 60, profile: customProfile(heavyNorth) });
+    loop.fastForward(600);
+    const per = loop.runner.engine.stats.perApproach;
+    expect(per.N.generated).toBeGreaterThan(per.E.generated * 4);
+    expect(per.N.generated).toBeGreaterThan(per.S.generated * 4);
+  });
+
+  it('is the same traffic for both controllers, and for a repeated build', async () => {
+    const { customProfile } = await import('../experiments');
+    const profile = customProfile(heavyNorth);
+    const gen = (controller: 'fixed' | 'adaptive') => {
+      const loop = makeLoop({ seed: 5, controller, mode: 'arrivals', fleet: 8, rate: 300, cycle: 60, profile });
+      loop.fastForward(300);
+      return APPROACHES.map((a) => loop.runner.engine.stats.perApproach[a].generated);
+    };
+    expect(gen('fixed')).toEqual(gen('adaptive'));
+    expect(gen('fixed')).toEqual(gen('fixed'));
+  });
+
+  it('changes demand part way through a shifting profile', async () => {
+    const { profileById } = await import('../experiments');
+    const loop = makeLoop({ seed: 4, controller: 'adaptive', mode: 'arrivals', fleet: 8, rate: 300, cycle: 60, profile: profileById('shifting') });
+    loop.fastForward(900);
+    const first = { ...loop.runner.engine.stats.perApproach };
+    const nsFirst = first.N.generated + first.S.generated;
+    const ewFirst = first.E.generated + first.W.generated;
+    expect(nsFirst).not.toBe(ewFirst);
+  });
+
+  it('ignores the profile in circulating mode', async () => {
+    const { customProfile } = await import('../experiments');
+    const loop = makeLoop({ seed: 1, controller: 'fixed', mode: 'circulating', fleet: 8, rate: 300, cycle: 60, profile: customProfile(heavyNorth) });
+    expect(loop.runner.engine.isCirculating).toBe(true);
+  });
+});

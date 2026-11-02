@@ -4,8 +4,41 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Adaptive Traffic Flow Simulation</title>
+    <style>
+      /* Splash screen: inline so it paints before any script or stylesheet has loaded. */
+      #boot { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: #f3f5f7; color: #1d2630;
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; transition: opacity 0.45s ease; }
+      #boot.done { opacity: 0; pointer-events: none; }
+      .boot-card { width: min(380px, 84vw); text-align: center; }
+      .boot-mark { display: flex; justify-content: center; gap: 10px; margin-bottom: 18px; }
+      .boot-mark i { width: 14px; height: 14px; border-radius: 50%; background: #c8d0d8; }
+      .boot-mark i:nth-child(1) { background: #ef4444; } .boot-mark i:nth-child(2) { background: #eab308; } .boot-mark i:nth-child(3) { background: #22c55e; }
+      .boot-title { font-size: 17px; font-weight: 600; margin-bottom: 20px; }
+      #boot-bar { height: 6px; border-radius: 3px; background: #d8dfe6; overflow: hidden; }
+      #boot-fill { height: 100%; width: 100%; background: #2563eb; transform-origin: left; transform: scaleX(0); }
+      .boot-line { display: flex; justify-content: space-between; margin-top: 10px; font-size: 13px; color: #5f6e7d; }
+      .boot-line b { color: #1d2630; font-variant-numeric: tabular-nums; }
+      #boot.failed #boot-fill { background: #d03b3b; }
+      #boot button { margin-top: 16px; font: inherit; padding: 6px 14px; border-radius: 6px; border: 1px solid #b8c2cc; background: #fff; cursor: pointer; }
+      @media (prefers-color-scheme: dark) {
+        #boot { background: #11151a; color: #e5eaf0; }
+        #boot-bar { background: #2b343e; } #boot-fill { background: #6ea8fe; }
+        .boot-line { color: #94a2b1; } .boot-line b { color: #e5eaf0; }
+        #boot button { background: #1a2027; color: #e5eaf0; border-color: #2b343e; }
+      }
+      @media (prefers-reduced-motion: reduce) { #boot { transition: none; } }
+    </style>
   </head>
   <body>
+    <div id="boot" role="status" aria-live="polite">
+      <div class="boot-card">
+        <div class="boot-mark" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="boot-title">Adaptive Traffic Flow Simulation</div>
+        <div id="boot-bar" role="progressbar" aria-label="Loading" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="boot-fill"></div></div>
+        <div class="boot-line"><span><span id="boot-label">Starting up</span></span><span>Preparing… <b id="boot-pct">0%</b></span></div>
+        <noscript>This simulation needs JavaScript. Please enable it and reload.</noscript>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
